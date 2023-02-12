@@ -1,30 +1,15 @@
 package main
 
 import (
-    "context"
-//     "time"
-//
-    "log"
-//
-    "go.mongodb.org/mongo-driver/mongo"
-    "go.mongodb.org/mongo-driver/mongo/options"
-//     "go.mongodb.org/mongo-driver/mongo/readpref"
-
-    "os"
-
-    "fmt"
+	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+	"fmt"
 )
-var collection *mongo.Collection
-var ctx = context.TODO()
 
 func main() {
-    mongoURL := os.Getenv("MAESTRO_MONGO_URL")
-    fmt.Printf("MAESTRO_MONGO_URL = %s\n", mongoURL)
+	var server MaeSanta.Maestro_Santaclaus_ServiceServer
 
-    clientOptions := options.Client().ApplyURI(mongoURL)
-    client, err := mongo.Connect(ctx, clientOptions)
-    if err != nil {
-        log.Fatal(err)
-    }
-    collection = client.Database("santaclaus").Collection("clients")
+	server = GetSantaclausServerImpl()
+
+	server.AddFile(nil, nil)
+	fmt.Println("Goodbye")
 }

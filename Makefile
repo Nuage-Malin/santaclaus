@@ -2,16 +2,17 @@
 ## Santaclaus - Indexer
 ##
 
-GO	=	go
+GO		=	go
 PROTOC	=	protoc
 
 NAME	=	santaclaus
 
 SRCDIR	=	src
 
-SRC		=	main.go
+SRC		=	main.go \
+			SantaclausServer.go
 
-SRC			:= $(addprefix $(SRCDIR)/, $(SRC))
+SRC		:= $(addprefix $(SRCDIR)/, $(SRC))
 
 GOFLAGS =	--trimpath --mod=vendor
 
@@ -26,6 +27,8 @@ fclean:
 
 re: fclean all
 
+# PROTOBUF - GRPC
+
 PROTODIR	=	./third_parties/protobuf-interfaces
 
 PROTOSRCDIR	=	$(PROTODIR)/src
@@ -37,13 +40,11 @@ PROTOSRC	=	common/File.proto \
 
 PROTOSRC	:= $(addprefix $(PROTOSRCDIR)/, $(PROTOSRC))
 
-
 gRPC:
+	export PATH="$PATH:$(go env GOPATH)/bin"
+	
 	$(PROTOC) \
 	--go_out=$(PROTOOUTDIR) \
 	--go-grpc_out=$(PROTOOUTDIR) \
 	-I $(PROTOSRCDIR) \
 	$(PROTOSRC)
-
-#	--go_opt=paths=source_relative \
-#	--go-grpc_opt=paths=source_relative \
