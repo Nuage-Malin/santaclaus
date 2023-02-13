@@ -33,11 +33,12 @@ type SantaclausServerImpl struct { // implements Maestro_Santaclaus_ServiceClien
 
 func (server *SantaclausServerImpl) setMongoClient(mongoURI string) {
 	clientOptions := options.Client().ApplyURI(mongoURI)
-	client, err := mongo.Connect(server.ctx, clientOptions)
+	var err error
+	server.mongoClient, err = mongo.Connect(server.ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = client.Ping(server.ctx, nil)
+	err = server.mongoClient.Ping(server.ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,8 +62,12 @@ func (server *SantaclausServerImpl) setMongoCollection(collName string) {
 
 func GetSantaclausServerImpl() SantaclausServerImpl {
 	var server SantaclausServerImpl
-	mongoURI := os.Getenv("SANTACLAUS_MONGO_URL")
-	fmt.Printf("SANTACLAUS_MONGO_URL = %s\n", mongoURI)
+	envVarnameMongoURI := "SANTACLAUS_MONGO_URI"
+	mongoURI := os.Getenv(envVarnameMongoURI)
+	if mongoURI == "" {
+		log.Fatalf("Missing environment variable '%s'", envVarnameMongoURI)
+	}
+	fmt.Printf("env var %s = %s\n", envVarnameMongoURI, mongoURI)
 
 	server.setMongoClient(mongoURI)
 	server.setMongoDatabase("Santaclaus")

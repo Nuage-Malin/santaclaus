@@ -13,16 +13,13 @@ import (
 
 func main() {
 	flag.Parse()
-	port := os.Getenv("SANTACLAUS_LISTENING_PORT")
-
-	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", port))
+	listeningAddress := os.Getenv("SANTACLAUS_ADDRESS")
+	listener, err := net.Listen("tcp", listeningAddress)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	var opts []grpc.ServerOption
-
-	var server MaeSanta.Maestro_Santaclaus_ServiceServer
-	server = GetSantaclausServerImpl()
+	var server MaeSanta.Maestro_Santaclaus_ServiceServer = GetSantaclausServerImpl()
 
 	grpcServer := grpc.NewServer(opts...)
 	MaeSanta.RegisterMaestro_Santaclaus_ServiceServer(grpcServer, server)
