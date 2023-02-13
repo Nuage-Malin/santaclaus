@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	var opts []grpc.ServerOption
-	var server MaeSanta.Maestro_Santaclaus_ServiceServer = GetSantaclausServerImpl()
+	var server MaeSanta.Maestro_Santaclaus_ServiceServer = NewSantaclausServerImpl()
 
 	grpcServer := grpc.NewServer(opts...)
 	MaeSanta.RegisterMaestro_Santaclaus_ServiceServer(grpcServer, server)

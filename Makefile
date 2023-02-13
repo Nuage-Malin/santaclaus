@@ -48,3 +48,6 @@ gRPC:
 	--go-grpc_out=$(PROTOOUTDIR) \
 	-I $(PROTOSRCDIR) \
 	$(PROTOSRC)
+
+unit_tests:
+	$(GO) test ./$(SRCDIR)

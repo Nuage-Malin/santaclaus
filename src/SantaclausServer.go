@@ -60,7 +60,7 @@ func (server *SantaclausServerImpl) setMongoCollection(collName string) {
 	}
 }
 
-func GetSantaclausServerImpl() SantaclausServerImpl {
+func NewSantaclausServerImpl() SantaclausServerImpl {
 	var server SantaclausServerImpl
 	envVarnameMongoURI := "SANTACLAUS_MONGO_URI"
 	mongoURI := os.Getenv(envVarnameMongoURI)
