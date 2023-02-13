@@ -61,8 +61,8 @@ func (server *SantaclausServerImpl) setMongoCollection(collName string) {
 
 func GetSantaclausServerImpl() SantaclausServerImpl {
 	var server SantaclausServerImpl
-	mongoURI := os.Getenv("MAESTRO_MONGO_URL")
-	fmt.Printf("MAESTRO_MONGO_URL = %s\n", mongoURI)
+	mongoURI := os.Getenv("SANTACLAUS_MONGO_URL")
+	fmt.Printf("SANTACLAUS_MONGO_URL = %s\n", mongoURI)
 
 	server.setMongoClient(mongoURI)
 	server.setMongoDatabase("Santaclaus")
