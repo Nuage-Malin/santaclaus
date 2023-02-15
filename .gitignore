@@ -5,6 +5,7 @@
 *.so
 *.dylib
 santaclaus
+unit_tests
 
 # Test binary, built with `go test -c`
 *.test

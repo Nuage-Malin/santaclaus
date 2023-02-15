@@ -2,28 +2,34 @@ version: '3.9'
 
 services:
     santaclaus:
-        build: .
+        build: 
+            dockerfile: Dockerfile
+            args:
+                EXEC_TYPE: ${EXEC_TYPE}
         container_name: santaclaus
         environment:
-            SANTACLAUS_ADDRESS: "[::]:8080"
-            SANTACLAUS_MONGO_URI: mongodb://santaclaus_admin:santaclaus_admin_password@mongo:27017/santaclaus?authSource=admin
+            SANTACLAUS_ADDRESS: ${SANTACLAUS_ADDRESS}
+            SANTACLAUS_MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin
+        
         expose:
-            - 8080
+            # - 8080
+            - ${SANTACLAUS_PORT}
         networks:
             - mongo
             # - santaclaus:maestro
         depends_on:
             - mongo
         restart: on-failure
-#
+
     mongo:
         image: mongo:6
         environment:
-            MONGO_INITDB_DATABASE: santaclaus
-            MONGO_INITDB_ROOT_USERNAME: santaclaus_admin
-            MONGO_INITDB_ROOT_PASSWORD: santaclaus_admin_password
+            MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+            MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}      
+            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}     
         expose:
-            - 27017
+            # - 27017
+            - ${MONGO_PORT}
         networks:
             - mongo
         volumes:

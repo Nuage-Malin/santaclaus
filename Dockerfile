@@ -1,12 +1,12 @@
 # FROM ubuntu:22.04
-FROM golang:1.19.3-alpine AS builder
+FROM golang:1.19.3-alpine AS base
+
+ARG EXEC_TYPE=santaclaus
+ENV EXEC_TYPE=${EXEC_TYPE}
+## EXEC_TYPE can be either "santaclaus" or "unit_tests"
 
 # Requirements
-# RUN apt-get update && apt-get install -y \
-    # golang                 \
-    # build-essential     \
-    # && rm -rf /var/lib/apt/lists/*
-RUN apk add --update \ 
+RUN apk add --update --no-cache \ 
         make \ 
         build-base
 
@@ -21,7 +21,8 @@ COPY go.mod go.sum /app/
 # Build
 RUN go mod download && \
     go mod verify
-RUN make
+
+RUN make ${EXEC_TYPE}
 
 # Run
-CMD ./santaclaus
+CMD ./${EXEC_TYPE}

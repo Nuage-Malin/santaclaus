@@ -49,5 +49,7 @@ gRPC:
 	-I $(PROTOSRCDIR) \
 	$(PROTOSRC)
 
+UNIT_TESTS	=	unit_tests
+
 unit_tests:
-	$(GO) test ./$(SRCDIR)
+	$(GO) test -c -o $(UNIT_TESTS) ./$(SRCDIR)
