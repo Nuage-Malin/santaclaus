@@ -26,6 +26,5 @@ func main() {
 	fmt.Println("Hello")
 	grpcServer.Serve(listener)
 
-	// server.AddFile(nil, nil)
 	fmt.Println("Goodbye")
 }
