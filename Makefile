@@ -40,8 +40,11 @@ PROTOSRC	=	common/File.proto \
 
 PROTOSRC	:= $(addprefix $(PROTOSRCDIR)/, $(PROTOSRC))
 
-gRPC:
-	export PATH="$PATH:$(go env GOPATH)/bin"
+PATH := $(PATH):$(shell go env GOPATH)/bin
+export $(PATH)
+
+gRPC:	
+	# export PATH="$(PATH):$(shell go env GOPATH)/bin"
 	
 	$(PROTOC) \
 	--go_out=$(PROTOOUTDIR) \

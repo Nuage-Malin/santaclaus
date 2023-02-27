@@ -9,7 +9,8 @@ services:
         container_name: santaclaus
         environment:
             SANTACLAUS_ADDRESS: ${SANTACLAUS_ADDRESS}
-            SANTACLAUS_MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin
+            SANTACLAUS_MONGO_DB: ${SANTACLAUS_MONGO_DB}
+            SANTACLAUS_MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:${MONGO_PORT}/${SANTACLAUS_MONGO_DB}?authSource=admin
         
         expose:
             # - 8080
@@ -24,24 +25,19 @@ services:
     mongo:
         image: mongo:6
         environment:
-            MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
-            MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}      
-            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}     
+            MONGO_INITDB_DATABASE: ${SANTACLAUS_MONGO_DB}
+            MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+
         expose:
             # - 27017
             - ${MONGO_PORT}
+            - ${MONGO_PORT}:${MONGO_PORT}
         networks:
             - mongo
         volumes:
             - mongo:/data/db
         restart: always
-
-#    documentation:
-#        build:
-#            context: .
-#            dockerfile: Dockerfile.documentation
-#        ports:
-#            - 50051:80
 
 networks:
     mongo: null
