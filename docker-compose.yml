@@ -13,7 +13,6 @@ services:
             SANTACLAUS_MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:${MONGO_PORT}/${SANTACLAUS_MONGO_DB}?authSource=admin
         
         expose:
-            # - 8080
             - ${SANTACLAUS_PORT}
         networks:
             - mongo
@@ -28,11 +27,8 @@ services:
             MONGO_INITDB_DATABASE: ${SANTACLAUS_MONGO_DB}
             MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
             MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-
         expose:
-            # - 27017
             - ${MONGO_PORT}
-            - ${MONGO_PORT}:${MONGO_PORT}
         networks:
             - mongo
         volumes:

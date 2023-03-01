@@ -44,8 +44,6 @@ PATH := $(PATH):$(shell go env GOPATH)/bin
 export $(PATH)
 
 gRPC:	
-	# export PATH="$(PATH):$(shell go env GOPATH)/bin"
-	
 	$(PROTOC) \
 	--go_out=$(PROTOOUTDIR) \
 	--go-grpc_out=$(PROTOOUTDIR) \

@@ -31,7 +31,7 @@ type SantaclausServerImpl struct { // implements Maestro_Santaclaus_ServiceClien
 
 func (server *SantaclausServerImpl) setMongoClient(mongoURI string) {
 	// var cancelFunc context.CancelFunc
-	// server.ctx /* cancelFunc */, _ = context.WithTimeout(context.Background(), 10*time.Second)
+	server.ctx /* cancelFunc */, _ = context.WithTimeout(context.Background(), 10*time.Second)
 	// server.ctx = context.TODO()
 	fmt.Printf("mongoURI: %v\n", mongoURI)
 	clientOptions := options.Client().ApplyURI(mongoURI)
@@ -44,25 +44,21 @@ func (server *SantaclausServerImpl) setMongoClient(mongoURI string) {
 	}
 	fmt.Println("continue")
 
-	fmt.Printf("clientOptions.Auth: %v\n", clientOptions.Auth)
-	fmt.Printf("clientOptions.AppName: %v\n", clientOptions.AppName)
 	server.mongoClient, err = mongo.Connect(server.ctx, clientOptions)
 	if err != nil {
 		fmt.Println("error 1")
 		log.Fatal(err)
 	}
-	// defer func() {
+	// defer func() { // TODO
 	// if err := server.mongoClient.Disconnect(context.TODO()); err != nil {
 	// panic(err)
 	// }
 	// }()
 
-	// todo error with the username and password (when connecting without them, it works)
-	// err = server.mongoClient.Ping(server.ctx, nil)
-	// if err != nil {
-	// fmt.Println("error 2")
-	// log.Fatal(err)
-	// }
+	err = server.mongoClient.Ping(server.ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("finish")
 
 }
@@ -88,7 +84,7 @@ func (server *SantaclausServerImpl) setMongoCollections(collNames []string) {
 	}
 }
 
-func NewSantaclausServerImpl() SantaclausServerImpl {
+func NewSantaclausServerImpl() *SantaclausServerImpl {
 	var server SantaclausServerImpl
 	envVarNameMongoURI := "SANTACLAUS_MONGO_URI"
 	mongoURI := os.Getenv(envVarNameMongoURI)
@@ -106,7 +102,7 @@ func NewSantaclausServerImpl() SantaclausServerImpl {
 	server.setMongoClient(mongoURI)
 	server.setMongoDatabase(indexDbName)
 	server.setMongoCollections([]string{filesCollName, directoriesCollName, disksCollName})
-	return server
+	return &server
 }
 
 type file struct {

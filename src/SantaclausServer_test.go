@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-var server SantaclausServerImpl = NewSantaclausServerImpl()
+var server *SantaclausServerImpl = NewSantaclausServerImpl()
 var ctx context.Context
 
 func TestAddFile(t *testing.T) {
@@ -21,7 +21,6 @@ func TestAddFile(t *testing.T) {
 	var request MaeSanta.AddFileRequest
 	request.File = &file
 	request.FileSize = fileSize
-
 	status, err := server.AddFile(ctx, &request)
 	if err != nil {
 		t.Errorf(err.Error())
