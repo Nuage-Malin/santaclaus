@@ -10,7 +10,10 @@ NAME	=	santaclaus
 SRCDIR	=	src
 
 SRC		=	main.go \
-			SantaclausServer.go
+			SantaclausServer.go \
+			SantaclausServerStructs.go \
+			SantaclausServerInit.go \
+			SantaclausServerUtils.go \
 
 SRC		:= $(addprefix $(SRCDIR)/, $(SRC))
 
@@ -18,14 +21,13 @@ GOFLAGS =	--trimpath --mod=vendor
 
 all: $(NAME)
 
-$(NAME):
-	$(GO) mod vendor
-	$(GO) build $(GOFLAGS) -o $(NAME) $(SRC)
-
 fclean:
 	rm -f  $(NAME)
 
-re: fclean all
+$(NAME):	fclean
+	$(GO) mod vendor
+	$(GO) build $(GOFLAGS) -o $(NAME) $(SRC)
+
 
 # PROTOBUF - GRPC
 
