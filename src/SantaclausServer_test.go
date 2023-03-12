@@ -15,6 +15,7 @@ var ctx context.Context
 
 var userId string = primitive.NewObjectID().Hex()
 
+/* AddFile */
 func TestAddFile(t *testing.T) {
 
 	var file MaeSanta.FileApproxMetadata
@@ -35,6 +36,7 @@ func TestAddFile(t *testing.T) {
 	}
 }
 
+// todo AddFile in directory
 func TestAddFileSameUser(t *testing.T) {
 
 	var file MaeSanta.FileApproxMetadata
@@ -51,6 +53,65 @@ func TestAddFileSameUser(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 	if status.DiskId == "" || status.FileId == "" {
-		t.Errorf("DiskId or FileId is empty")
+		t.Errorf("DiskId or FileId is empty") // log and fail
+	}
+}
+
+/* AddDirectory */
+
+func TestCreateDirectory(t *testing.T) {
+	var dir MaeSanta.FileApproxMetadata
+	dir.DirPath = "/"
+	dir.Name = "my_directory"
+	dir.UserId = userId
+	var request = MaeSanta.AddDirectoryRequest{Directory: &dir}
+
+	status, err := server.AddDirectory(ctx, &request)
+	if err != nil {
+		t.Error(err)
+	}
+	if status.DirId == primitive.NilObjectID.Hex() {
+		t.Errorf("DirId is empty") // log and fail
+	}
+}
+
+func TestCreateSubDirectoryTwice(t *testing.T) {
+	var dir MaeSanta.FileApproxMetadata
+	dir.DirPath = "/my_directory"
+	dir.Name = "my_subDirectory"
+	dir.UserId = userId
+	var request = MaeSanta.AddDirectoryRequest{Directory: &dir}
+	var dirId string
+
+	status, err := server.AddDirectory(ctx, &request)
+	if err != nil {
+		t.Error(err)
+	}
+	dirId = status.DirId
+	if dirId == primitive.NilObjectID.Hex() {
+		t.Errorf("DirId is empty") // log and fail
+	}
+	status, err = server.AddDirectory(ctx, &request)
+	if err != nil {
+		t.Error(err) // log and fail
+	}
+	if dirId != status.DirId {
+		t.Errorf("DirId is different from previously created same directory") // log and fail
+	}
+}
+
+func TestCreateSubDirectorySameSubName(t *testing.T) {
+	var dir MaeSanta.FileApproxMetadata
+	dir.DirPath = "/my_directory/my_subDirectory"
+	dir.Name = "my_directory"
+	dir.UserId = userId
+	var request = MaeSanta.AddDirectoryRequest{Directory: &dir}
+
+	status, err := server.AddDirectory(ctx, &request)
+	if err != nil {
+		t.Error(err)
+	}
+	if status.DirId == primitive.NilObjectID.Hex() {
+		t.Errorf("DirId is empty") // log and fail
 	}
 }

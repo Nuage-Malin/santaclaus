@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 	"time"
@@ -17,40 +16,53 @@ func checkErr(err error) {
 	}
 }
 
-func (server *SantaclausServerImpl) createRootDir(userId primitive.ObjectID) directory {
+func (server *SantaclausServerImpl) createDir(userId primitive.ObjectID, parentId primitive.ObjectID, name string) (dir directory) {
+	// check if directory already exists
+	findRes := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, primitive.D{{"parent_id", parentId}, {"name", name}, {"user_id", userId}})
 
-	var rootDir directory = directory{
-		Id:        primitive.NewObjectID(), // todo make sure this is filled up by mongo
-		Name:      "/",
+	if findRes.Err() == nil {
+		// if found existing directory, return it
+		err := findRes.Decode(&dir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return dir
+	}
+
+	dir = directory{
+		Id:        primitive.NewObjectID(),
+		Name:      name,
 		UserId:    userId,
-		ParentId:  primitive.NilObjectID,
+		ParentId:  parentId,
 		CreatedAt: time.Now(),
 		EditedAt:  time.Now(),
 		Deleted:   false}
-	// fmt.Printf("rootDir.Id.Hex(): %v\n", rootDir.Id.Hex())
-	// fmt.Printf("rootDir.Id.String(): %v\n", rootDir.Id.String())
-	res, err := server.mongoColls[DirectoriesCollName].InsertOne(server.ctx, rootDir)
-	if res == nil || err != nil {
+	insertRes, err := server.mongoColls[DirectoriesCollName].InsertOne(server.ctx, dir)
+
+	if insertRes == nil || err != nil {
 		log.Fatal(err)
 	}
-	rootDir.Id = res.InsertedID.(primitive.ObjectID)
-	return rootDir
+	dir.Id = insertRes.InsertedID.(primitive.ObjectID)
+	return dir
+}
+
+func (server *SantaclausServerImpl) createRootDir(userId primitive.ObjectID) directory {
+
+	return server.createDir(userId, primitive.NilObjectID, "/")
 }
 
 func (server *SantaclausServerImpl) checkRootDirExistance(userId primitive.ObjectID) directory {
 
 	targetDir := bson.D{{"name", "/"}, {"user_id", userId}}
 	res := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, targetDir)
+
 	if res.Err() != nil {
-
-		fmt.Println(res.Err().Error())
-		fmt.Println("Couldn't find root dir, creating it") // todo do logs so it prints only when debuging
+		log.Println(res.Err().Error())
+		log.Println("Couldn't find root dir, creating it") // todo do logs so it prints only when debuging
 		return server.createRootDir(userId)                // If the root directory doesn't exist, we create it
-
 	}
 	var rootDir directory
 	err := res.Decode(&rootDir)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,74 +72,50 @@ func (server *SantaclausServerImpl) checkRootDirExistance(userId primitive.Objec
 func (server *SantaclausServerImpl) findDirFromPath(dirPath string, userId primitive.ObjectID) (directory, error) {
 
 	var dir directory
-	if dirPath == "/" {
+	if dirPath == "/" { // todo get rid of that
 		dir = server.checkRootDirExistance(userId)
 		if dir.Id == primitive.NilObjectID {
 			log.Fatalf("Error while getting root directory")
 		}
 	}
+	var directories []directory
+	var tmpDir directory
+	var didFind bool = false
 	dirName := filepath.Base(dirPath)
 	dirBase := filepath.Dir(dirPath)
-	tmp := make(map[string]interface{})
-	var didFind bool = false
-
-	targetDirectory := bson.D{primitive.E{Key: "Name", Value: dirName}, primitive.E{Key: "UserId", Value: userId}}
+	targetDirectory := bson.D{{"name", dirName}, {"user_id", userId}}
 	cur, err := server.mongoColls[DirectoriesCollName].Find(server.ctx, targetDirectory /*, &targetDirectoryOptions*/)
-	// checkErr(err)
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	for i := cur; i != nil && i.Current != nil; i.Next(server.ctx) {
+	err = cur.All(server.ctx, &directories)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, dir = range directories {
 		dirName = filepath.Base(dirPath)
 		dirBase = filepath.Dir(dirPath)
-		err = i.Decode(tmp)
-		// checkErr(err) // TODO this is not the solution, I guess ?
-		if err != nil {
-			if err.Error() == "EOF" {
-				fmt.Println("yo what's up")
-				continue
-			} else {
-				log.Fatal(err)
-			}
-		}
+		tmpDir = dir
 		for {
-			// if tmp.parentId == primitive.NilObjectID {
-			if tmp["parentId"] == primitive.NilObjectID {
-				fmt.Println("Found directory !")
+			if tmpDir.ParentId == primitive.NilObjectID {
 				didFind = true
+				break
 			}
 			dirName = filepath.Base(dirBase)
 			dirBase = filepath.Dir(dirBase)
-			// targetDirectory = bson.D{primitive.E{Key: "dirId", Value: tmp.parentId}, primitive.E{Key: "name", Value: dirName}, primitive.E{Key: "userId", Value: userId}}
-			targetDirectory = bson.D{primitive.E{Key: "_id", Value: tmp["ParentId"]}, primitive.E{Key: "Name", Value: dirName}, primitive.E{Key: "UserId", Value: userId}}
+			targetDirectory = bson.D{{"_id", tmpDir.ParentId}, {"name", dirName}, {"user_id", userId}}
 			res := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, targetDirectory /*, &targetDirectoryOptions*/)
-
 			if res == nil {
 				break
 			}
-
-			err = res.Decode(tmp)
-			// checkErr(err)
+			err = res.Decode(&tmpDir)
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			// 	dirID should be formed from hashing name and parentId
-
-			// targetDirectory := bson.D{{Key: "name", Value: filepath.Dir(dirPath)}, primitive.E{Key: "userId", Value: userId}}
-			// targetDirectoryOptions := options.FindOneOptions{} // TODO refine search
-
 		}
 		if didFind {
-			i.Decode(tmp)
-			dir.Id = tmp["_id"].(primitive.ObjectID)
-			dir.Name = tmp["name"].(string)
-			dir.UserId = tmp["userId"].(primitive.ObjectID)
-			dir.ParentId = tmp["parentId"].(primitive.ObjectID)
-			// dir.DirId = tmp["dirId"].(primitive.ObjectID)
-			dir.CreatedAt = tmp["createdAt"].(time.Time)
-			dir.EditedAt = tmp["editedAt"].(time.Time)
-			return dir, nil
+			break
 		}
 	}
 	return dir, err // TODO learn about creating errors

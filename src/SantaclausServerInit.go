@@ -2,7 +2,6 @@ package main
 
 import (
 	context "context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -15,7 +14,7 @@ func (server *SantaclausServerImpl) setMongoClient(mongoURI string) {
 	// var cancelFunc context.CancelFunc
 	server.ctx /* cancelFunc */, _ = context.WithTimeout(context.Background(), 10*time.Second)
 	// server.ctx = context.TODO()
-	fmt.Printf("mongoURI: %v\n", mongoURI)
+	log.Printf("mongoURI: %v\n", mongoURI)
 	clientOptions := options.Client().ApplyURI(mongoURI)
 
 	var err error
@@ -55,7 +54,7 @@ func (server *SantaclausServerImpl) setMongoCollections(collNames []string) {
 		if server.mongoColls[collName] == nil {
 			log.Fatalf("Could not find collection \"%s\", in database \"%s\"", collName, server.mongoDb.Name())
 		} else {
-			fmt.Printf("%s collection initialized successfully\n", collName)
+			log.Printf("%s collection initialized successfully\n", collName)
 		}
 	}
 }
@@ -70,13 +69,13 @@ func NewSantaclausServerImpl() *SantaclausServerImpl {
 	if mongoURI == "" {
 		log.Fatalf("Missing environment variable '%s'", envVarNameMongoURI)
 	}
-	fmt.Printf("env var %s = %s\n", envVarNameMongoURI, mongoURI)
+	log.Printf("env var %s = %s\n", envVarNameMongoURI, mongoURI)
 	envVarNameMongoDB := "SANTACLAUS_MONGO_DB"
 	indexDbName := os.Getenv(envVarNameMongoDB)
 	if indexDbName == "" {
 		log.Fatalf("Missing environment variable '%s'", envVarNameMongoDB)
 	}
-	fmt.Printf("env var %s = %s\n", envVarNameMongoDB, indexDbName)
+	log.Printf("env var %s = %s\n", envVarNameMongoDB, indexDbName)
 
 	server.setMongoClient(mongoURI)
 	server.setMongoDatabase(indexDbName)

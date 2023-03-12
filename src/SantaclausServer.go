@@ -3,7 +3,6 @@ package main
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	context "context"
-	"fmt"
 	"log"
 	"path/filepath"
 	"time"
@@ -45,7 +44,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 	newFileId, ok := insertRes.InsertedID.(primitive.ObjectID)
 
 	if ok == false {
-		fmt.Println("Wrong type assertion!")
+		log.Println("Wrong type assertion!")
 		// TODO check
 	}
 
@@ -125,38 +124,18 @@ func (server *SantaclausServerImpl) ChangeFileDisk(_ context.Context, req *MaeSa
 
 // Directories
 func (server *SantaclausServerImpl) AddDirectory(_ context.Context, req *MaeSanta.AddDirectoryRequest) (status *MaeSanta.AddDirectoryStatus, r error) {
-	// TODO algo to create new directory :
-	// 		hash of parentId and name
-
 	// find parent ID from req.Directory.DirPath
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
 	if err != nil {
 		log.Fatal(err)
 	}
-	parentDir, err := server.findDirFromPath(filepath.Dir(req.Directory.DirPath), userId)
-	// TODO check error other than that
-	// checkErr(err)
+	parentDir, err := server.findDirFromPath(req.Directory.DirPath, userId)
 	if err != nil {
+		// TODO check error in another way than that
 		log.Fatal(err)
 	}
-	newDirectory := directory{
-		Name:      filepath.Base(req.Directory.Name),
-		UserId:    userId,
-		ParentId:  parentDir.Id, // todo make sure ID is correct
-		CreatedAt: time.Now(),
-		EditedAt:  time.Now()}
-	res, err := server.mongoColls[DirectoriesCollName].InsertOne(server.ctx, newDirectory)
-	if err != nil {
-		// log.Logger()
-	}
-
-	// res.InsertedID.Decode(status.DirId)
-
-	var ok bool
-	status.DirId, ok = res.InsertedID.(string)
-	if !ok {
-		// err
-	}
+	dir := server.createDir(userId, parentDir.Id, req.Directory.Name)
+	status = &MaeSanta.AddDirectoryStatus{DirId: dir.Id.Hex()}
 	return status, r
 }
 func (server *SantaclausServerImpl) RemoveDirectory(context.Context, *MaeSanta.RemoveDirectoryRequest) (status *MaeSanta.RemoveDirectoryStatus, r error) {
@@ -178,7 +157,7 @@ func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, re
 	dirFound := server.mongoColls[FilesCollName].FindOne(server.ctx, filter)
 
 	var currentDir directory
-	dirFound.Decode(currentDir) // todo make sure that its ID is correct within field Id
+	dirFound.Decode(&currentDir) // todo make sure that its ID is correct within field Id
 	// todo not use Decode but marshall
 	currentMetadata := MaeSanta.FileApproxMetadata{Name: currentDir.Name, DirPath: dirPath /* TODO if not exists, find directory path from dir ID */, UserId: currentDir.UserId.String()}
 	status.Directories = append(status.Directories, &currentMetadata)
@@ -191,7 +170,7 @@ func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, re
 			log.Fatal(err)
 		}
 		for i := childDirIds; i != nil; i.Next(server.ctx) {
-			i.Decode(currentDir)
+			i.Decode(&currentDir)
 			status = server.getOneDirectory(currentDir.Id, recursive, filepath.Join(dirPath, currentDir.Name), status)
 		}
 	}
@@ -213,5 +192,5 @@ func (server *SantaclausServerImpl) GetDirectory(_ context.Context, req *MaeSant
 }
 
 // func (server *SantaclausServerImpl) mustEmbedUnimplementedMaestro_Santaclaus_ServiceServer() {
-// fmt.Println("hello")
+// log.Println("hello")
 // }
