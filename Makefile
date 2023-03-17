@@ -23,6 +23,7 @@ all: $(NAME)
 
 fclean:
 	rm -f  $(NAME)
+	rm -f  $(UNIT_TESTS)
 
 $(NAME):	fclean
 	$(GO) mod vendor
@@ -54,5 +55,5 @@ gRPC:
 
 UNIT_TESTS	=	unit_tests
 
-unit_tests:
+unit_tests: fclean
 	$(GO) test -c -o $(UNIT_TESTS) ./$(SRCDIR)

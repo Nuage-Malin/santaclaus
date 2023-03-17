@@ -17,6 +17,7 @@ services:
         restart: always
         
     santaclaus:
+        profiles: ["launch"]
         build: 
             dockerfile: Dockerfile
             args:
@@ -25,7 +26,7 @@ services:
         environment:
             SANTACLAUS_ADDRESS: ${SANTACLAUS_ADDRESS}
             SANTACLAUS_MONGO_DB: ${SANTACLAUS_MONGO_DB}
-            SANTACLAUS_MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:${MONGO_PORT}/${SANTACLAUS_MONGO_DB}?authSource=admin
+            SANTACLAUS_MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_MACHINE}:${MONGO_PORT}/${SANTACLAUS_MONGO_DB}?authSource=admin
         
         expose:
             - ${SANTACLAUS_PORT}

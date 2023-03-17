@@ -5,13 +5,13 @@ Indexer
 ### Build
 
 ```shell
-docker compose --env-file santaclaus.env build
+docker compose --profile launch --env-file santaclaus.env build
 ```
 
 ### Run
 
 ```shell
-docker compose --env-file santaclaus.env up
+docker compose --profile launch --env-file santaclaus.env up
 ```
 
 ## Manually

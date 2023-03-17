@@ -61,8 +61,6 @@ func (server *SantaclausServerImpl) setMongoCollections(collNames []string) {
 
 func NewSantaclausServerImpl() *SantaclausServerImpl {
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile) // eneable line printing with logs // TODO put somewhere else
-
 	var server SantaclausServerImpl
 	envVarNameMongoURI := "SANTACLAUS_MONGO_URI"
 	mongoURI := os.Getenv(envVarNameMongoURI)

@@ -121,6 +121,21 @@ func (server *SantaclausServerImpl) findDirFromPath(dirPath string, userId primi
 	return dir, err // TODO learn about creating errors
 }
 
+func (server *SantaclausServerImpl) findPathFromDir(dirId primitive.ObjectID) (dirPath string) {
+	var currentDir directory
+	nextId := dirId
+
+	for nextId != primitive.NilObjectID {
+		err := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, bson.D{{"_id", nextId}}).Decode(&currentDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dirPath = filepath.Join(currentDir.Name, dirPath)
+		nextId = currentDir.ParentId
+	}
+	return dirPath
+}
+
 func (server *SantaclausServerImpl) findAvailableDisk(fileSize uint64, userId string) (found disk /* TODO change by disk id*/) {
 	filter := bson.D{}
 	targetDiskOptions := options.FindOneOptions{Min: bson.D{primitive.E{Key: "availableSize", Value: fileSize}}} // TODO refine search
