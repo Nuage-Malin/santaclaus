@@ -18,6 +18,8 @@ docker compose --profile launch --env-file santaclaus.env up
 ### Build
 
 ```shell
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 go mod download
 go mod verify
 make gRPC
@@ -35,7 +37,13 @@ make
 ### Build and run nit tests
 
 ```shell
-docker compose --env-file unit_tests.env up --build
+## launches the database to be able to connect with mongo compass (even after the tests have run)
+docker compose --env-file unit_tests.env up --build 
+./scripts/unit_tests.sh
+```
+Alternatively, `unit_tests.sh` script can launch docker :
+```shell
+./scripts/unit_tests.sh --docker
 ```
 
 <!-- ## Learn -->

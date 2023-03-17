@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -o allexport
+source ./unit_tests.env
 source ./local_unit_tests.env
 set +o allexport
 
@@ -15,5 +16,5 @@ fi
 ./unit_tests
 
 if [ "$1" == "--docker" ] ; then
-    kill ${DOCKER_PID} ## todo launch docker in background from docker arguments and stop with docker command
+    kill $DOCKER_PID ## todo launch docker in background from docker arguments and stop with docker command
 fi
