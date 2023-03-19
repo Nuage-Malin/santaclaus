@@ -31,7 +31,7 @@ func TestGetFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if status.File.DirPath != file.DirPath || status.File.Name != file.Name || status.File.UserId != file.UserId {
+	if status.File.DirPath != file.DirPath || status.File.Name != file.Name || status.File.UserId != file.UserId { // check approx metadata
 		t.Errorf("Metadata about file retrieved is different from added one")
 	}
 	// todo check content of what I got
@@ -84,4 +84,4 @@ func TestGetFiles(t *testing.T) {
 	// todo check content of what I got
 }*/
 
-//TODO func TestGetRootDirectory(t *testing.T) {}
+//TODO test non existing file

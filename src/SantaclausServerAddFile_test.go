@@ -15,7 +15,7 @@ func TestAddFile(t *testing.T) {
 
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
-		Name:    "my_file",
+		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
@@ -31,12 +31,11 @@ func TestAddFile(t *testing.T) {
 	}
 }
 
-// todo AddFile in directory
 func TestAddFileSameUser(t *testing.T) {
 
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
-		Name:    "my_otherFile",
+		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
@@ -51,3 +50,5 @@ func TestAddFileSameUser(t *testing.T) {
 		t.Errorf("DiskId or FileId is empty") // log and fail
 	}
 }
+
+// todo AddFile in directory

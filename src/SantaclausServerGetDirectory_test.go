@@ -158,8 +158,6 @@ func TestGetSubDirectories(t *testing.T) {
 	}
 }
 
-// TODO func TestGetRootDirectory(t *testing.T) {}
-
 func TestGetRootDirectory(t *testing.T) {
 	request := MaeSanta.GetDirectoryRequest{DirId: primitive.NilObjectID.Hex(), IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)

@@ -3,6 +3,7 @@ package main
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	context "context"
+	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 
 func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.AddFileRequest) (status *MaeSanta.AddFileStatus, r error) {
 	userId, err := primitive.ObjectIDFromHex(req.File.UserId)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,6 +87,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 
 func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *MaeSanta.RemoveFileRequest) (status *MaeSanta.RemoveFileStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,14 +106,40 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 
 func (server *SantaclausServerImpl) MoveFile(_ context.Context, req *MaeSanta.MoveFileRequest) (status *MaeSanta.MoveFileStatus, r error) {
 
-	// filter := bson.D{primitive.E{Key: "_id", Value: req.GetFileId()}}
-	// file := server.mongoColls[FilesCollName].FindOne(server.ctx, filter)
-	// server.findDirFromPath(file.dirBase(req.GetFilepath()), /* file. find user id from file */)
+	// todo if nil object id for dirId, move to root dir ?
+	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
+	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
-	// update := bson.D{primitive.E{Key: "dirId", Value: /* new directory id */}}
+	if r != nil {
+		log.Fatal(r)
+	}
 
-	// modify dir Id
-	// server.mongoColls[FilesCollName].UpdateOne(server.ctx, filter, update)
+	if r != nil {
+		return nil, r
+	}
+	// If dirId is incorrect, return error
+	filter := bson.D{{"_id", dirId}}
+	var dir directory
+	r = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
+	if r != nil {
+		return nil, r
+	}
+	// note: If name already exists, no problem, as id uniquely identifies the file
+	filter = bson.D{{"_id", fileId}}
+	update := bson.D{{"$set", bson.D{{"name", req.Name}, {"dir_id", dirId}}}}
+	res, r := server.mongoColls[FilesCollName].UpdateOne(server.ctx, filter, update) // todo test updateById
+	if r != nil {
+		return nil, r
+	}
+	if res.MatchedCount != 1 {
+		return nil, errors.New("Could not find file to be updated")
+	}
+	if res.ModifiedCount != 1 {
+		log.Print(res.ModifiedCount)
+		return nil, errors.New("Could not modify file to be updated")
+	}
+
+	status = &MaeSanta.MoveFileStatus{}
 
 	return status, r
 }
@@ -127,18 +156,39 @@ func (server *SantaclausServerImpl) GetFile(_ context.Context, req *MaeSanta.Get
 	if err != nil {
 		return nil, err
 	}
+
 	status := &MaeSanta.GetFileStatus{
 		File: &MaeSanta.FileApproxMetadata{
 			Name:    fileFound.Name,
 			DirPath: server.findPathFromDir(fileFound.DirId),
 			UserId:  fileFound.UserId.Hex()},
 		DiskId: fileFound.DiskId.Hex()}
+	/*
+		status := &MaeSanta.GetFileStatus{
+			File: &MaeSanta.FileMetadata{
+				ApproxMetadata: &MaeSanta.FileApproxMetadata{
+					Name:    fileFound.Name,
+					DirPath: server.findPathFromDir(fileFound.DirId),
+					UserId:  fileFound.UserId.Hex()},
+				FileId:         fileFound.Id.Hex(),
+				DirId:          fileFound.DirId.Hex(),
+				IsDownloadable: fileFound.Downloadable,
+				LastEditorId:   primitive.NilObjectID.Hex(), // todo this field is useless
+				Creation:       timestamppb.New(fileFound.CreatedAt),
+				LastEdit:       timestamppb.New(fileFound.LastUpload),
+			},
+			DiskId: fileFound.DiskId.Hex()} */
+	// todo think about this :
+	// in the case of using fileMetadata instead of approxMetadata, but I don't think it is usefull
+	// because this procedure should only be called when trying to download a file
+	// but then how do we know the file is downloadable ??
 	return status, err
 	/* todo is this the way of returning errors ? */
 }
 
 func (server *SantaclausServerImpl) UpdateFileSuccess(_ context.Context, req *MaeSanta.UpdateFileSuccessRequest) (status *MaeSanta.UpdateFileSuccessStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,10 +267,10 @@ func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, re
 
 	// todo special case for root dir :
 	// if queried with nil dirId, queries root dir
-	filter := bson.D{{"dir_id", dirId}}
 	var files []file
 	var dir directory
 	var dirs []directory
+	filter := bson.D{{"dir_id", dirId}}
 	cur, err := server.mongoColls[FilesCollName].Find(server.ctx, filter)
 
 	if err != nil {
@@ -285,8 +335,8 @@ func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, re
 }
 
 func (server *SantaclausServerImpl) GetDirectory(_ context.Context, req *MaeSanta.GetDirectoryRequest) (status *MaeSanta.GetDirectoryStatus, r error) {
-	// TODO fetch all the files
 	dirId, err := primitive.ObjectIDFromHex(req.DirId)
+
 	if err != nil {
 		log.Fatal(err)
 	}
