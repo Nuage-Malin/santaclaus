@@ -8,10 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// todo put this file in different directory
-
-// todo recursive with multiple directories and recursive = false
-
 func TestMoveFileLocation(t *testing.T) {
 	var dir [2]MaeSanta.FileApproxMetadata
 	dir[0] = MaeSanta.FileApproxMetadata{
@@ -130,7 +126,7 @@ func TestMoveFileName(t *testing.T) {
 	}
 }
 
-func TestMoveFileToFakeFolder(t *testing.T) { // todo
+func TestMoveFileToFakeDirectory(t *testing.T) {
 	var file MaeSanta.FileApproxMetadata
 	file = MaeSanta.FileApproxMetadata{
 		Name:    getUniqueName(),
@@ -157,3 +153,5 @@ func TestMoveFileToFakeFolder(t *testing.T) { // todo
 	}
 
 }
+
+// todo change both name and location

@@ -125,6 +125,8 @@ func (server *SantaclausServerImpl) MoveFile(_ context.Context, req *MaeSanta.Mo
 		return nil, r
 	}
 	// note: If name already exists, no problem, as id uniquely identifies the file
+	// todo change the behaviour described above, cause problem for directories
+
 	filter = bson.D{{"_id", fileId}}
 	update := bson.D{{"$set", bson.D{{"name", req.Name}, {"dir_id", dirId}}}}
 	res, r := server.mongoColls[FilesCollName].UpdateOne(server.ctx, filter, update) // todo test updateById
@@ -256,10 +258,67 @@ func (server *SantaclausServerImpl) RemoveDirectory(context.Context, *MaeSanta.R
 	// server.server.mongoColls[directoriesCollsName].FindAndDelete(/* fileter with dirID */)
 	return status, r
 }
-func (server *SantaclausServerImpl) MoveDirectory(context.Context, *MaeSanta.MoveDirectoryRequest) (status *MaeSanta.MoveDirectoryStatus, r error) {
-	// - add directory
-	// - change files' directory Id
-	// - remove directory
+
+func (server *SantaclausServerImpl) MoveDirectory(_ context.Context, req *MaeSanta.MoveDirectoryRequest) (status *MaeSanta.MoveDirectoryStatus, r error) {
+	// todo if nil object id for dirId, move to root dir ?
+	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
+	newLocationDirId, r := primitive.ObjectIDFromHex(req.GetNewLocationDirId())
+
+	if r != nil {
+		log.Fatal(r)
+	}
+
+	if r != nil {
+		return nil, r
+	}
+	// If dirId is incorrect, return error
+	filter := bson.D{{"_id", newLocationDirId}}
+	var dir directory
+	r = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
+	if r != nil {
+		return nil, r
+	}
+	var update bson.D
+	if newLocationDirId != dirId {
+		filter = bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}
+		r = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
+		if r == nil {
+			return nil, errors.New("Directory name already exists in this directory, aborting move")
+		}
+		filter = bson.D{{"_id", newLocationDirId}}
+		r = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
+		if r != nil {
+			return nil, r
+		}
+		if dir.ParentId == dirId {
+			return nil, errors.New("Cannot store directory in its subdirectory")
+		}
+
+		update = bson.D{{"$set", bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}}}
+	} else {
+		filter = bson.D{{"name", req.Name}, {"parent_id", dir.ParentId}}
+		r = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
+		if r == nil {
+			return nil, errors.New("Directory name already exists in this directory, aborting move")
+		}
+		// In order not to change the location, but only the name, in the parameter, specify the same dirId as actual and new dir
+		update = bson.D{{"$set", bson.D{{"name", req.Name}}}}
+	}
+
+	filter = bson.D{{"_id", dirId}}
+	res, r := server.mongoColls[DirectoriesCollName].UpdateOne(server.ctx, filter, update)
+
+	if r != nil {
+		return nil, r
+	}
+	if res.MatchedCount != 1 {
+		return nil, errors.New("Could not find file to be updated")
+	}
+	if res.ModifiedCount != 1 {
+		log.Print(res.ModifiedCount)
+		return nil, errors.New("Could not modify file to be updated")
+	}
+	status = &MaeSanta.MoveDirectoryStatus{}
 	return status, r
 }
 
