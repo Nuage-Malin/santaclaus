@@ -11,6 +11,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -85,6 +86,39 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 	return status, r
 }
 
+func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req *MaeSanta.RemoveFilesRequest) (status *MaeSanta.RemoveFilesStatus, r error) {
+	var fileId primitive.ObjectID
+	var tmpErr error
+	var filter bson.D
+	var res *mongo.UpdateResult
+	update := bson.D{{"$set", bson.D{{"deleted", true}}}}
+
+	for _, tmpFileId := range req.FileIds {
+		fileId, tmpErr = primitive.ObjectIDFromHex(tmpFileId)
+		if tmpErr != nil {
+			log.Print(tmpErr)
+			r = tmpErr
+			continue
+		}
+		filter = bson.D{{"_id", fileId}}
+		res, tmpErr = server.mongoColls[FilesCollName].UpdateOne(server.ctx, filter, update)
+		if tmpErr != nil {
+			log.Print(tmpErr)
+			r = tmpErr
+			continue
+		}
+		if res.MatchedCount != 1 {
+			log.Printf("Could not find file with id %s (in order to virtually delete it)", fileId)
+			continue
+		}
+		if res.ModifiedCount != 1 {
+			log.Printf("Could not modify file with id %s (in order to virtually delete it)", fileId)
+			continue
+		}
+	}
+	return status, r
+}
+
 func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *MaeSanta.RemoveFileRequest) (status *MaeSanta.RemoveFileStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
@@ -102,6 +136,33 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 	}
 	status = &MaeSanta.RemoveFileStatus{}
 	return status, nil
+}
+func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req *MaeSanta.RemoveFilesRequest) (status *MaeSanta.RemoveFilesStatus, r error) {
+	var fileId primitive.ObjectID
+	var tmpErr error
+	var filter bson.D
+	var res *mongo.DeleteResult
+
+	for _, tmpFileId := range req.FileIds {
+		fileId, tmpErr = primitive.ObjectIDFromHex(tmpFileId)
+		if tmpErr != nil {
+			log.Print(tmpErr)
+			r = tmpErr
+			continue
+		}
+		filter = bson.D{{"_id", fileId}}
+		res, tmpErr = server.mongoColls[FilesCollName].DeleteOne(server.ctx, filter)
+		if tmpErr != nil {
+			log.Print(tmpErr)
+			r = tmpErr
+			continue
+		}
+		if res.DeletedCount != 1 {
+			log.Printf("Could not delete file with id %s", fileId)
+			continue
+		}
+	}
+	return status, r
 }
 
 func (server *SantaclausServerImpl) MoveFile(_ context.Context, req *MaeSanta.MoveFileRequest) (status *MaeSanta.MoveFileStatus, r error) {
@@ -159,27 +220,27 @@ func (server *SantaclausServerImpl) GetFile(_ context.Context, req *MaeSanta.Get
 		return nil, err
 	}
 
+	/* status := &MaeSanta.GetFileStatus{
+	File: &MaeSanta.FileApproxMetadata{
+		Name:    fileFound.Name,
+		DirPath: server.findPathFromDir(fileFound.DirId),
+		UserId:  fileFound.UserId.Hex()},
+	DiskId: fileFound.DiskId.Hex()} */
+
 	status := &MaeSanta.GetFileStatus{
-		File: &MaeSanta.FileApproxMetadata{
-			Name:    fileFound.Name,
-			DirPath: server.findPathFromDir(fileFound.DirId),
-			UserId:  fileFound.UserId.Hex()},
+		File: &MaeSanta.FileMetadata{
+			ApproxMetadata: &MaeSanta.FileApproxMetadata{
+				Name:    fileFound.Name,
+				DirPath: server.findPathFromDir(fileFound.DirId),
+				UserId:  fileFound.UserId.Hex()},
+			FileId:         fileFound.Id.Hex(),
+			DirId:          fileFound.DirId.Hex(),
+			IsDownloadable: fileFound.Downloadable,
+			LastEditorId:   primitive.NilObjectID.Hex(), // todo this field is useless
+			Creation:       timestamppb.New(fileFound.CreatedAt),
+			LastEdit:       timestamppb.New(fileFound.LastUpload),
+		},
 		DiskId: fileFound.DiskId.Hex()}
-	/*
-		status := &MaeSanta.GetFileStatus{
-			File: &MaeSanta.FileMetadata{
-				ApproxMetadata: &MaeSanta.FileApproxMetadata{
-					Name:    fileFound.Name,
-					DirPath: server.findPathFromDir(fileFound.DirId),
-					UserId:  fileFound.UserId.Hex()},
-				FileId:         fileFound.Id.Hex(),
-				DirId:          fileFound.DirId.Hex(),
-				IsDownloadable: fileFound.Downloadable,
-				LastEditorId:   primitive.NilObjectID.Hex(), // todo this field is useless
-				Creation:       timestamppb.New(fileFound.CreatedAt),
-				LastEdit:       timestamppb.New(fileFound.LastUpload),
-			},
-			DiskId: fileFound.DiskId.Hex()} */
 	// todo think about this :
 	// in the case of using fileMetadata instead of approxMetadata, but I don't think it is usefull
 	// because this procedure should only be called when trying to download a file
@@ -256,6 +317,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(context.Context, *MaeSanta.R
 	// remove all files
 	// server.server.mongoColls[filesCollsName].FindAndDelete(/* filter with dirID */)
 	// server.server.mongoColls[directoriesCollsName].FindAndDelete(/* fileter with dirID */)
+
 	return status, r
 }
 

@@ -66,11 +66,11 @@ func TestMoveFileLocation(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if fileMoved.File.DirPath != filepath.Join(dir[1].DirPath, dir[1].Name) {
-		t.Errorf("File path has not been moved properly, it is %s, but should be %s", fileMoved.File.DirPath, filepath.Join(dir[1].DirPath, dir[1].Name))
+	if fileMoved.File.ApproxMetadata.DirPath != filepath.Join(dir[1].DirPath, dir[1].Name) {
+		t.Errorf("File path has not been moved properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.DirPath, filepath.Join(dir[1].DirPath, dir[1].Name))
 	}
-	if fileMoved.File.Name != createFileRequest.File.Name {
-		t.Errorf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.Name, createFileRequest.File.Name)
+	if fileMoved.File.ApproxMetadata.Name != createFileRequest.File.Name {
+		t.Errorf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.Name, createFileRequest.File.Name)
 	}
 }
 
@@ -118,11 +118,11 @@ func TestMoveFileName(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if fileMoved.File.DirPath != filepath.Join(dir.DirPath, dir.Name) {
-		t.Errorf("File path has not been moved properly, it is %s, but should be %s", fileMoved.File.DirPath, filepath.Join(dir.DirPath, dir.Name))
+	if fileMoved.File.ApproxMetadata.DirPath != filepath.Join(dir.DirPath, dir.Name) {
+		t.Errorf("File path has not been moved properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.DirPath, filepath.Join(dir.DirPath, dir.Name))
 	}
-	if fileMoved.File.Name != request.Name {
-		t.Errorf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.Name, createFileRequest.File.Name)
+	if fileMoved.File.ApproxMetadata.Name != request.Name {
+		t.Errorf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.Name, createFileRequest.File.Name)
 	}
 }
 

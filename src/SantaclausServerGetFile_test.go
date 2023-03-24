@@ -31,7 +31,7 @@ func TestGetFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if status.File.DirPath != file.DirPath || status.File.Name != file.Name || status.File.UserId != file.UserId { // check approx metadata
+	if status.File.ApproxMetadata.DirPath != file.DirPath || status.File.ApproxMetadata.Name != file.Name || status.File.ApproxMetadata.UserId != file.UserId { // check approx metadata
 		t.Errorf("Metadata about file retrieved is different from added one")
 	}
 	// todo check content of what I got
