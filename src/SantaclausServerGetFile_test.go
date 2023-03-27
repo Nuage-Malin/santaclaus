@@ -5,6 +5,8 @@ package main
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestGetFile(t *testing.T) {
@@ -33,6 +35,17 @@ func TestGetFile(t *testing.T) {
 	}
 	if status.File.ApproxMetadata.DirPath != file.DirPath || status.File.ApproxMetadata.Name != file.Name || status.File.ApproxMetadata.UserId != file.UserId { // check approx metadata
 		t.Errorf("Metadata about file retrieved is different from added one")
+	}
+	if status.File.FileId != createFileStatus.FileId || status.DiskId != createFileStatus.DiskId {
+		t.Errorf("Ids inserted and retrieved don't match :\nfileId inserted : %s\tfileId retrieved : %s\ndiskId inserted : %s\tdiskId retrieved %s\n", createFileStatus.FileId, status.File.FileId, createFileStatus.DiskId, status.DiskId)
+	}
+	userIdPrimitive, err := primitive.ObjectIDFromHex(userId)
+	dir, err := server.findDirFromPath(file.DirPath, userIdPrimitive)
+	if err != nil {
+		t.Error(err)
+	}
+	if status.File.DirId != dir.Id.Hex() {
+		t.Errorf("File retrieved is in different directory than the one inserted")
 	}
 	// todo check content of what I got
 }

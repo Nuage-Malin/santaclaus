@@ -145,5 +145,10 @@ func (server *SantaclausServerImpl) findAvailableDisk(fileSize uint64, userId st
 	/*res := */
 	server.mongoColls[DisksCollName].FindOne(server.ctx, filter, &targetDiskOptions)
 
+	found = disk{
+		Id:            primitive.NewObjectID(), // todo find real objectId
+		TotalSize:     0,
+		AvailableSize: 0,
+	}
 	return found
 }

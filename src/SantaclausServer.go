@@ -55,7 +55,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 
 	status = &MaeSanta.AddFileStatus{
 		FileId: newFileId.Hex(),
-		DiskId: newFile.DiskId.String()}
+		DiskId: newFile.DiskId.Hex()}
 
 	return status, nil
 }
@@ -137,6 +137,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 	status = &MaeSanta.RemoveFileStatus{}
 	return status, nil
 }
+
 func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req *MaeSanta.RemoveFilesRequest) (status *MaeSanta.RemoveFilesStatus, r error) {
 	var fileId primitive.ObjectID
 	var tmpErr error
