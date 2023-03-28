@@ -32,8 +32,8 @@ type file struct {
 	LastUpload   time.Time          // Lorsqu'il est virtuel: undefined, lorsqu'il est sur le disque dur: date
 	CreatedAt    time.Time          `bson:"created_at"` // todo change to camelCase !
 	EditedAt     time.Time          `bson:"updated_at"` // todo change to camelCase !
-	Deleted      bool
-	Downloadable bool // todo
+	Deleted      bool               `bons:"deleted"`
+	Downloadable bool               // todo
 	// todo last editor id
 }
 
@@ -44,7 +44,7 @@ type directory struct {
 	ParentId  primitive.ObjectID `bson:"parent_id"` // If nil, root directory
 	CreatedAt time.Time          `bson:"created_at"`
 	EditedAt  time.Time          `bson:"updated_at"`
-	Deleted   bool
+	Deleted   bool               `bons:"deleted"`
 }
 
 type disk struct {

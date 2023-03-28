@@ -17,11 +17,11 @@ func TestGetDirectory(t *testing.T) {
 		UserId:  userId}
 	var createDirrequest = MaeSanta.AddDirectoryRequest{Directory: &dir}
 
-	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
+	addDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
 	if err != nil {
 		t.Error(err)
 	}
-	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
+	if addDirStatus.DirId == primitive.NilObjectID.Hex() {
 		t.Errorf("Could not create directory %s : DirId returned is nil", dir.Name) // log and fail
 	}
 	file := MaeSanta.FileApproxMetadata{
@@ -41,7 +41,7 @@ func TestGetDirectory(t *testing.T) {
 		t.Errorf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: createDirStatus.DirId, IsRecursive: true}
+	request := MaeSanta.GetDirectoryRequest{DirId: addDirStatus.DirId, IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)
 	if err != nil {
 		t.Error(err)
@@ -61,7 +61,7 @@ func TestGetDirectory(t *testing.T) {
 		if index >= 1 {
 			t.Errorf("Inserted only one directory but several retrieved in index")
 		}
-		if createDirStatus.DirId != indexedDir.DirId {
+		if addDirStatus.DirId != indexedDir.DirId {
 			t.Errorf("DirId of directory in index different from added one")
 		}
 		if dir.DirPath != indexedDir.ApproxMetadata.DirPath || dir.Name != indexedDir.ApproxMetadata.Name {
@@ -80,13 +80,15 @@ func TestGetSubDirectories(t *testing.T) {
 		Name:    getUniqueName(),
 		DirPath: "/",
 		UserId:  userId}
-	var createDirrequest = MaeSanta.AddDirectoryRequest{Directory: &dir[0]}
-
-	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
+	var createDirRequest [2]MaeSanta.AddDirectoryRequest
+	createDirRequest[0] = MaeSanta.AddDirectoryRequest{Directory: &dir[0]}
+	var addDirStatus [2]*MaeSanta.AddDirectoryStatus
+	var err error
+	addDirStatus[0], err = server.AddDirectory(ctx, &createDirRequest[0])
 	if err != nil {
 		t.Error(err)
 	}
-	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
+	if addDirStatus[0].DirId == primitive.NilObjectID.Hex() {
 		t.Errorf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
 	}
 	var file [2]MaeSanta.FileApproxMetadata
@@ -108,13 +110,13 @@ func TestGetSubDirectories(t *testing.T) {
 		Name:    getUniqueName(),
 		DirPath: filepath.Join(dir[0].DirPath, dir[0].Name),
 		UserId:  userId}
-	createDirrequest = MaeSanta.AddDirectoryRequest{Directory: &dir[1]}
+	createDirRequest[1] = MaeSanta.AddDirectoryRequest{Directory: &dir[1]}
 
-	secondCreateDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
+	addDirStatus[1], err = server.AddDirectory(ctx, &createDirRequest[1])
 	if err != nil {
 		t.Error(err)
 	}
-	if secondCreateDirStatus.DirId == primitive.NilObjectID.Hex() {
+	if addDirStatus[1].DirId == primitive.NilObjectID.Hex() {
 		t.Errorf("Could not create directory %s : DirId is empty", dir[1].Name) // log and fail
 	}
 	file[1] = MaeSanta.FileApproxMetadata{
@@ -131,7 +133,7 @@ func TestGetSubDirectories(t *testing.T) {
 
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: createDirStatus.DirId, IsRecursive: true}
+	request := MaeSanta.GetDirectoryRequest{DirId: addDirStatus[0].DirId, IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)
 
 	if err != nil {
@@ -146,10 +148,10 @@ func TestGetSubDirectories(t *testing.T) {
 		}
 	}
 	for index, indexedDir := range status.SubFiles.DirIndex {
-		if index >= 1 {
+		if index >= 2 {
 			t.Errorf("Inserted only one directory but several retrieved in index")
 		}
-		if createDirStatus.DirId != indexedDir.DirId {
+		if addDirStatus[index].DirId != indexedDir.DirId {
 			t.Errorf("DirId of directory in index different from added one")
 		}
 		if dir[index].DirPath != indexedDir.ApproxMetadata.DirPath || dir[index].Name != indexedDir.ApproxMetadata.Name {
