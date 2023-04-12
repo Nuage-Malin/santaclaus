@@ -39,14 +39,16 @@ PROTOSRCDIR	=	$(PROTODIR)/src
 PROTOOUTDIR	=	$(PROTODIR)/generated
 
 PROTOSRC	=	common/File.proto \
-				Maestro_Santaclaus/Maestro_Santaclaus.proto
+				common/Disk.proto \
+				Maestro_Santaclaus/Maestro_Santaclaus.proto \
+				Santaclaus_HardwareMalin/Santaclaus_HardwareMalin.proto
 
 PROTOSRC	:= $(addprefix $(PROTOSRCDIR)/, $(PROTOSRC))
 
 PATH := $(PATH):$(shell go env GOPATH)/bin
 export $(PATH)
 
-gRPC:	
+gRPC:
 	$(PROTOC) \
 	--go_out=$(PROTOOUTDIR) \
 	--go-grpc_out=$(PROTOOUTDIR) \

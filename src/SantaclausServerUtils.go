@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"path/filepath"
 	"time"
@@ -136,34 +135,4 @@ func (server *SantaclausServerImpl) findPathFromDir(dirId primitive.ObjectID) (d
 		nextId = currentDir.ParentId
 	}
 	return dirPath
-}
-
-func (server *SantaclausServerImpl) findAvailableDisk(fileSize uint64, userId string) (found primitive.ObjectID, r error) {
-	var disks []disk
-	diskFound := disk{Id: primitive.NilObjectID, AvailableSize: 0, TotalSize: 0}
-	filter := bson.D{{"available_size", bson.D{{"$gt", fileSize}}}}
-	res, r := server.mongoColls[DisksCollName].Find(server.ctx, filter)
-
-	if r != nil {
-		return primitive.NilObjectID, r
-	}
-	if res == nil {
-		return primitive.NilObjectID, errors.New("Could not find disk big enough for file")
-	}
-	r = res.All(server.ctx, &disks)
-	if r != nil {
-		return primitive.NilObjectID, r
-	}
-
-	for _, disk := range disks {
-		if diskFound.AvailableSize < disk.AvailableSize {
-			diskFound.AvailableSize = disk.AvailableSize
-		}
-	}
-	if diskFound.Id == primitive.NilObjectID {
-		found = primitive.NewObjectID() // tmp, todo change
-		// return primitive.NilObjectID, errors.New("Could not find disk big enough for file") // todo uncomment
-	}
-	// todo update disk size here ? or in other function ?
-	return found, nil
 }

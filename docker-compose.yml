@@ -15,10 +15,10 @@ services:
         volumes:
             - mongo:/data/db
         restart: always
-        
+
     santaclaus:
         profiles: ["launch"]
-        build: 
+        build:
             dockerfile: Dockerfile
             args:
                 EXEC_TYPE: ${EXEC_TYPE}
@@ -27,22 +27,22 @@ services:
             SANTACLAUS_ADDRESS: ${SANTACLAUS_ADDRESS}
             SANTACLAUS_MONGO_DB: ${SANTACLAUS_MONGO_DB}
             SANTACLAUS_MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_MACHINE}:${MONGO_PORT}/${SANTACLAUS_MONGO_DB}?authSource=admin
-        
+
         expose:
             - ${SANTACLAUS_PORT}
         networks:
             - mongo
-            # - santaclaus:maestro
+            - maestro:santaclaus
         depends_on:
             - mongo
         restart: on-failure
 
-  
+
 
 networks:
     mongo: null
-    # santaclaus:maestro:
-        # external: true
+    maestro:santaclaus:
+        external: true
 
 volumes:
     mongo: null
