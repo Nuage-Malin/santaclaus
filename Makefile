@@ -14,6 +14,7 @@ SRC		=	main.go \
 			SantaclausServerStructs.go \
 			SantaclausServerInit.go \
 			SantaclausServerUtils.go \
+			SantaclausServerUtilsDisks.go \
 
 SRC		:= $(addprefix $(SRCDIR)/, $(SRC))
 
