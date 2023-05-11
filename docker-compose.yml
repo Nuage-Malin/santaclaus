@@ -1,23 +1,8 @@
 version: '3.9'
 
 services:
-    mongo:
-        image: mongo:6
-        environment:
-            MONGO_INITDB_DATABASE: ${SANTACLAUS_MONGO_DB}
-            MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-        ports:
-            - ${MONGO_PORT}
-            - ${MONGO_PORT}:${MONGO_PORT}
-        networks:
-            - mongo
-        volumes:
-            - mongo:/data/db
-        restart: always
-
     santaclaus:
-        profiles: ["launch"]
+        profiles: [ "launch" ]
         build:
             dockerfile: Dockerfile
             args:
@@ -37,7 +22,19 @@ services:
             - mongo
         restart: on-failure
 
-
+    mongo:
+        image: mongo:6
+        environment:
+            MONGO_INITDB_DATABASE: ${SANTACLAUS_MONGO_DB}
+            MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+        ports:
+            - 27017:${MONGO_PORT}
+        networks:
+            - mongo
+        volumes:
+            - mongo:/data/db
+        restart: always
 
 networks:
     mongo: null
