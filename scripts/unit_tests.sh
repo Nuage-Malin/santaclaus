@@ -1,15 +1,15 @@
 #!/bin/bash
 
 set -o allexport
-source ./unit_tests.env
-source ./local_unit_tests.env
+source ./env/unit_tests.env
+source ./env/local_unit_tests.env
 set +o allexport
 
 make gRPC
 make unit_tests
 
 if [ "$1" == "--docker" ] ; then
-    docker compose --env-file ./unit_tests.env up --build &
+    docker compose --env-file ./env/unit_tests.env up --build &
     DOCKER_PID=$!
 fi
 

@@ -5,13 +5,13 @@ Indexer
 ### Build
 
 ```shell
-docker compose --profile launch --env-file santaclaus.env build
+docker compose --profile launch --env-file env/santaclaus.env build
 ```
 
 ### Run
 
 ```shell
-docker compose --profile launch --env-file santaclaus.env up
+docker compose --profile launch --env-file env/santaclaus.env up
 ```
 
 ## Manually
@@ -38,7 +38,7 @@ make
 
 ```shell
 ## launches the database to be able to connect with mongo compass (even after the tests have run)
-docker compose --env-file unit_tests.env up --build 
+docker compose --env-file env/unit_tests.env up --build 
 ./scripts/unit_tests.sh
 ```
 Alternatively, `unit_tests.sh` script can launch docker :

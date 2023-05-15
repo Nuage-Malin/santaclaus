@@ -522,6 +522,7 @@ func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, re
 }
 
 func (server *SantaclausServerImpl) GetDirectory(_ context.Context, req *MaeSanta.GetDirectoryRequest) (status *MaeSanta.GetDirectoryStatus, r error) {
+	// todo get userId (from new protobuf version) and update the rest of the procedure accoring to it
 	dirId, err := primitive.ObjectIDFromHex(req.DirId)
 	var dir directory
 
