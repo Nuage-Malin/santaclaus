@@ -13,6 +13,7 @@ SRC		=	main.go \
 			SantaclausServer.go \
 			SantaclausServerStructs.go \
 			SantaclausServerInit.go \
+			SantaclausServerGetDirectory.go \
 			SantaclausServerUtils.go \
 			SantaclausServerUtilsDisks.go \
 

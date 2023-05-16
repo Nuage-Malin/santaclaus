@@ -41,7 +41,7 @@ func TestGetDirectory(t *testing.T) {
 		t.Errorf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: addDirStatus.DirId, IsRecursive: true}
+	request := MaeSanta.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)
 	if err != nil {
 		t.Error(err)
@@ -133,7 +133,7 @@ func TestGetSubDirectories(t *testing.T) {
 
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: addDirStatus[0].DirId, IsRecursive: true}
+	request := MaeSanta.GetDirectoryRequest{DirId: &addDirStatus[0].DirId, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)
 
 	if err != nil {
@@ -161,8 +161,9 @@ func TestGetSubDirectories(t *testing.T) {
 }
 
 func TestGetRootDirectory(t *testing.T) {
-	request := MaeSanta.GetDirectoryRequest{DirId: primitive.NilObjectID.Hex(), IsRecursive: true}
+	request := MaeSanta.GetDirectoryRequest{DirId: nil, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)
+
 	if err != nil {
 		t.Error(err)
 	}

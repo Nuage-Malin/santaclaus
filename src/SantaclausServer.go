@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"path/filepath"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -453,102 +452,5 @@ func (server *SantaclausServerImpl) MoveDirectory(_ context.Context, req *MaeSan
 		return nil, errors.New("Could not modify file to be updated")
 	}
 	status = &MaeSanta.MoveDirectoryStatus{}
-	return status, r
-}
-
-func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, recursive bool, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
-
-	// todo special case for root dir :
-	// if queried with nil dirId, queries root dir
-	var files []file
-	var dir directory
-	var dirs []directory
-	filter := bson.D{{"_id", dirId}, {"deleted", false}} // get the directory if exists and not deleted
-	err := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
-
-	if err != nil {
-		return status, err
-	}
-	status.SubFiles.DirIndex = append(status.SubFiles.DirIndex,
-		&MaeSanta.DirMetadata{
-			ApproxMetadata: &MaeSanta.FileApproxMetadata{
-				Name:    dir.Name,
-				DirPath: filepath.Dir(server.findPathFromDir(dir.Id)),
-				UserId:  dir.UserId.Hex(),
-			},
-			DirId: dir.Id.Hex()})
-	filter = bson.D{{"dir_id", dirId}, {"deleted", false}} // get all files if not deleted
-	cur, err := server.mongoColls[FilesCollName].Find(server.ctx, filter)
-
-	if err != nil {
-		return status, err
-	}
-	err = cur.All(server.ctx, &files)
-
-	if err != nil {
-		return status, err
-	}
-
-	for _, file := range files {
-		metadata := &MaeSanta.FileMetadata{
-			ApproxMetadata: &MaeSanta.FileApproxMetadata{Name: file.Name, DirPath: dirPath, UserId: file.UserId.Hex()},
-			FileId:         file.Id.Hex(),
-			IsDownloadable: false,             /* TODO change by real stored field */
-			LastEditorId:   file.UserId.Hex(), /* TODO ? */
-			Creation:       &timestamppb.Timestamp{Seconds: 0 /* TODO file.CreatedAt */},
-			LastEdit:       &timestamppb.Timestamp{Seconds: 0 /* TODO file.EditedAt */}}
-		status.SubFiles.FileIndex = append(status.SubFiles.FileIndex, metadata)
-	}
-	if recursive {
-		/* find all children directories thanks to a request with their parent ID (which is the current dirId) */
-		filter := bson.D{primitive.E{Key: "parent_id", Value: dirId}}
-		childDirIds, err := server.mongoColls[DirectoriesCollName].Find(server.ctx, filter)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = childDirIds.All(server.ctx, &dirs)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, dir := range dirs {
-			status, err = server.getOneDirectory(dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)
-			if err != nil {
-				return status, err
-			}
-		}
-	}
-	return status, nil
-}
-
-func (server *SantaclausServerImpl) GetDirectory(_ context.Context, req *MaeSanta.GetDirectoryRequest) (status *MaeSanta.GetDirectoryStatus, r error) {
-	// todo get userId (from new protobuf version) and update the rest of the procedure accoring to it
-	dirId, err := primitive.ObjectIDFromHex(req.DirId)
-	var dir directory
-
-	if err != nil {
-		return nil, r
-	}
-	status = &MaeSanta.GetDirectoryStatus{
-		SubFiles: &MaeSanta.FilesIndex{
-			FileIndex: []*MaeSanta.FileMetadata{},
-			DirIndex:  []*MaeSanta.DirMetadata{}}}
-
-	// if !primitive.IsValidObjectID(req.DirId) { // TODO use that instead of ObjectIDFromHex ?
-	// err
-	// }
-	var dirPath string
-	if dirId == primitive.NilObjectID {
-		dirPath = "/"
-		filter := bson.D{{"name", "/"}, {"parent_id", primitive.NilObjectID}}
-		r = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
-		if r != nil {
-			return nil, r
-		}
-		dirId = dir.Id
-	} else {
-		dirPath = server.findPathFromDir(dirId)
-	}
-	status, r = server.getOneDirectory(dirId, req.IsRecursive, dirPath, status)
 	return status, r
 }

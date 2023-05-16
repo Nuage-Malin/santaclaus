@@ -50,7 +50,7 @@ func TestMoveDirectoryLocation(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	getDirReq := MaeSanta.GetDirectoryRequest{DirId: request.NewLocationDirId, IsRecursive: false}
+	getDirReq := MaeSanta.GetDirectoryRequest{DirId: &request.NewLocationDirId, UserId: userId, IsRecursive: false}
 	index, err := server.GetDirectory(server.ctx, &getDirReq)
 	if err != nil {
 		t.Error(err)
@@ -89,7 +89,7 @@ func TestMoveDirectoryName(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	getDirReq := MaeSanta.GetDirectoryRequest{DirId: request.DirId, IsRecursive: false}
+	getDirReq := MaeSanta.GetDirectoryRequest{DirId: &request.DirId, UserId: userId, IsRecursive: false}
 	index, err := server.GetDirectory(server.ctx, &getDirReq)
 	if err != nil {
 		t.Error(err)

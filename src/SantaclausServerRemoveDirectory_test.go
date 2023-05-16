@@ -56,7 +56,7 @@ func TestRemoveDirectory(t *testing.T) {
 	}
 	// todo do getFile procedure
 	// todo maybe use the server to query into the database and check if the directory has been removed
-	getDirReq := MaeSanta.GetDirectoryRequest{DirId: addDirStatus.DirId}
+	getDirReq := MaeSanta.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId}
 	getDirStatus, err := server.GetDirectory(server.ctx, &getDirReq)
 	if err != nil {
 		if err.Error() != "mongo: no documents in result" {
@@ -111,7 +111,7 @@ func TestPhysicalRemoveDirectory(t *testing.T) {
 	// todo use the server to query into the database and check if the file has the 'removed' field set
 	// 		cause this test is useless as it is same as previous with both VirtualRemoveDirectory
 	getDirRequest := MaeSanta.GetDirectoryRequest{
-		DirId: primitive.NilObjectID.Hex(), IsRecursive: true}
+		DirId: &primitive.NilObjectID.Hex(), UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(server.ctx, &getDirRequest)
 	if err != nil {
 		t.Error(err)

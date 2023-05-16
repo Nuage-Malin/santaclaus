@@ -83,7 +83,7 @@ func TestGetFiles(t *testing.T) {
 		t.Errorf("DiskId or FileId is empty")
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: createDirStatus.DirId, IsRecursive: true}
+	request := MaeSanta.GetDirectoryRequest{DirId: &createDirStatus.DirId, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(server.ctx, &request)
 
 	for index, indexedFile := range status.SubFiles.Index {

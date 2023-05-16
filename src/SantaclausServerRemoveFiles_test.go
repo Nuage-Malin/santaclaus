@@ -5,8 +5,6 @@ package main
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	"testing"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /* AddFile */
@@ -45,7 +43,7 @@ func TestVirtualRemoveFiles(t *testing.T) {
 	// todo do getFile procedure
 	// todo maybe use the server to query into the database and check if the file has the 'removed' field set
 	getDirRequest := MaeSanta.GetDirectoryRequest{
-		DirId: primitive.NilObjectID.Hex(), IsRecursive: true}
+		DirId: nil, UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(server.ctx, &getDirRequest)
 	if err != nil {
 		t.Error(err)
@@ -99,7 +97,7 @@ func TestPhysicalRemoveFiles(t *testing.T) {
 	// todo use the server to query into the database and check if the file has the 'removed' field set
 	// 		cause this test is useless as it is same as previous with both VirtualRemoveFiles
 	getDirRequest := MaeSanta.GetDirectoryRequest{
-		DirId: primitive.NilObjectID.Hex(), IsRecursive: true}
+		DirId: nil, UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(server.ctx, &getDirRequest)
 	if err != nil {
 		t.Error(err)

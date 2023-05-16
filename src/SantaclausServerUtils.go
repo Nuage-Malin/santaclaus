@@ -50,6 +50,9 @@ func (server *SantaclausServerImpl) createRootDir(userId primitive.ObjectID) dir
 	return server.createDir(userId, primitive.NilObjectID, "/")
 }
 
+/**
+ * creates root dir if doesn't exists, otherwise return existing root dir
+ */
 func (server *SantaclausServerImpl) checkRootDirExistance(userId primitive.ObjectID) directory {
 
 	targetDir := bson.D{{"name", "/"}, {"user_id", userId}}
