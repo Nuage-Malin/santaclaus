@@ -9,23 +9,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func checkErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (server *SantaclausServerImpl) createDir(userId primitive.ObjectID, parentId primitive.ObjectID, name string) (dir directory) {
+func (server *SantaclausServerImpl) createDir(userId primitive.ObjectID, parentId primitive.ObjectID, name string) (dir directory, err error) {
 	// check if directory already exists
 	findRes := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, primitive.D{{"parent_id", parentId}, {"name", name}, {"user_id", userId}})
 
 	if findRes.Err() == nil {
 		// if found existing directory, return it
-		err := findRes.Decode(&dir)
+		err = findRes.Decode(&dir)
 		if err != nil {
-			log.Fatal(err)
+			// log.Fatal(err)
+			return dir, err
 		}
-		return dir
+		return dir, nil
 	}
 
 	dir = directory{
@@ -39,13 +34,14 @@ func (server *SantaclausServerImpl) createDir(userId primitive.ObjectID, parentI
 	insertRes, err := server.mongoColls[DirectoriesCollName].InsertOne(server.ctx, dir)
 
 	if insertRes == nil || err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return dir, err
 	}
 	dir.Id = insertRes.InsertedID.(primitive.ObjectID)
-	return dir
+	return dir, nil
 }
 
-func (server *SantaclausServerImpl) createRootDir(userId primitive.ObjectID) directory {
+func (server *SantaclausServerImpl) createRootDir(userId primitive.ObjectID) (directory, error) {
 
 	return server.createDir(userId, primitive.NilObjectID, "/")
 }
@@ -53,7 +49,7 @@ func (server *SantaclausServerImpl) createRootDir(userId primitive.ObjectID) dir
 /**
  * creates root dir if doesn't exists, otherwise return existing root dir
  */
-func (server *SantaclausServerImpl) checkRootDirExistance(userId primitive.ObjectID) directory {
+func (server *SantaclausServerImpl) checkRootDirExistance(userId primitive.ObjectID) (rootDir directory, err error) {
 
 	targetDir := bson.D{{"name", "/"}, {"user_id", userId}}
 	res := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, targetDir)
@@ -65,21 +61,18 @@ func (server *SantaclausServerImpl) checkRootDirExistance(userId primitive.Objec
 			return server.createRootDir(userId)                // If the root directory doesn't exist, we create it
 		}
 	}
-	var rootDir directory
-	err := res.Decode(&rootDir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return rootDir
+	err = res.Decode(&rootDir)
+	// log.Fatal(err)
+	return rootDir, err
 }
 
-func (server *SantaclausServerImpl) findDirFromPath(dirPath string, userId primitive.ObjectID) (directory, error) {
+func (server *SantaclausServerImpl) findDirFromPath(dirPath string, userId primitive.ObjectID) (dir directory, err error) {
 
-	var dir directory
 	if dirPath == "/" { // todo get rid of that
-		dir = server.checkRootDirExistance(userId)
-		if dir.Id == primitive.NilObjectID {
-			log.Fatalf("Error while getting root directory")
+		dir, err = server.checkRootDirExistance(userId)
+		if dir.Id == primitive.NilObjectID || err != nil {
+			// log.Fatalf("Error while getting root directory")
+			return dir, err
 		}
 	}
 	var directories []directory
@@ -91,11 +84,13 @@ func (server *SantaclausServerImpl) findDirFromPath(dirPath string, userId primi
 	cur, err := server.mongoColls[DirectoriesCollName].Find(server.ctx, targetDirectory /*, &targetDirectoryOptions*/)
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return dir, err
 	}
 	err = cur.All(server.ctx, &directories)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return dir, err
 	}
 	for _, dir = range directories {
 		dirName = filepath.Base(dirPath)
@@ -115,27 +110,29 @@ func (server *SantaclausServerImpl) findDirFromPath(dirPath string, userId primi
 			}
 			err = res.Decode(&tmpDir)
 			if err != nil {
-				log.Fatal(err)
+				// log.Fatal(err)
+				return dir, err
 			}
 		}
 		if didFind {
 			break
 		}
 	}
-	return dir, err // TODO learn about creating errors
+	return dir, nil
 }
 
-func (server *SantaclausServerImpl) findPathFromDir(dirId primitive.ObjectID) (dirPath string) {
+func (server *SantaclausServerImpl) findPathFromDir(dirId primitive.ObjectID) (dirPath string, err error) {
 	var currentDir directory
 	nextId := dirId
 
 	for nextId != primitive.NilObjectID {
-		err := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, bson.D{{"_id", nextId}}).Decode(&currentDir)
+		err = server.mongoColls[DirectoriesCollName].FindOne(server.ctx, bson.D{{"_id", nextId}}).Decode(&currentDir)
 		if err != nil {
-			log.Fatal(err)
+			// log.Fatal(err)
+			return "", err
 		}
 		dirPath = filepath.Join(currentDir.Name, dirPath)
 		nextId = currentDir.ParentId
 	}
-	return dirPath
+	return dirPath, nil
 }

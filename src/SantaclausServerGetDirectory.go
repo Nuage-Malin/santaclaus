@@ -71,11 +71,16 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(dirId primitive.Objec
 	if err != nil {
 		return status, err
 	}
+	dirPath, err := server.findPathFromDir(dir.Id)
+	if err != nil {
+		return nil, err
+	}
+	dirPath = filepath.Dir(dirPath)
 	status.SubFiles.DirIndex = append(status.SubFiles.DirIndex,
 		&MaeSanta.DirMetadata{
 			ApproxMetadata: &MaeSanta.FileApproxMetadata{
 				Name:    dir.Name,
-				DirPath: filepath.Dir(server.findPathFromDir(dir.Id)),
+				DirPath: dirPath,
 				UserId:  dir.UserId.Hex(),
 			},
 			DirId: dir.Id.Hex()})
@@ -103,7 +108,10 @@ func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, re
 }
 
 func (server *SantaclausServerImpl) GetRootDirectory(recursive bool, userId primitive.ObjectID, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
-	var rootDir directory = server.checkRootDirExistance(userId) // creates root dir if inexistant, else return existant
+	rootDir, err := server.checkRootDirExistance(userId) // creates root dir if inexistant, else return existant
+	if err != nil {
+		return nil, err
+	}
 
 	return server.getOneDirectory(rootDir.Id, recursive, "/", status)
 }
@@ -129,7 +137,11 @@ func (server *SantaclausServerImpl) GetDirectory(_ context.Context, req *MaeSant
 	}
 
 	if dirId != primitive.NilObjectID {
-		return server.getOneDirectory(dirId, req.IsRecursive, server.findPathFromDir(dirId), status)
+		dirPath, err := server.findPathFromDir(dirId)
+		if err != nil {
+			return nil, err
+		}
+		return server.getOneDirectory(dirId, req.IsRecursive, dirPath, status)
 	} else { // todo does it actually ever branches through that ?
 		return server.GetRootDirectory(req.IsRecursive, userId, status)
 	}

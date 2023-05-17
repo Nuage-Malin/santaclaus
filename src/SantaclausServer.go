@@ -18,11 +18,13 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 	userId, err := primitive.ObjectIDFromHex(req.File.UserId)
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	foundDirectory, err := server.findDirFromPath(req.File.DirPath, userId)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 		// TODO do something
 	}
 
@@ -47,7 +49,8 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 	}
 	insertRes, err := server.mongoColls[FilesCollName].InsertOne(server.ctx, newFile)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	newFileId, ok := insertRes.InsertedID.(primitive.ObjectID)
 
@@ -67,7 +70,8 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	filter := bson.D{{"_id", fileId}}
 	update := bson.D{{"$set", bson.D{{"deleted", true}}}} // only modify 'deleted' to true
@@ -126,7 +130,8 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	filter := bson.D{{"_id", fileId}}
 	// TODO find out more about contexts !!
@@ -176,7 +181,8 @@ func (server *SantaclausServerImpl) MoveFile(_ context.Context, req *MaeSanta.Mo
 	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
 	if r != nil {
-		log.Fatal(r)
+		// log.Fatal(r)
+		return status, r
 	}
 
 	if r != nil {
@@ -216,7 +222,8 @@ func (server *SantaclausServerImpl) GetFile(_ context.Context, req *MaeSanta.Get
 	fileId, err := primitive.ObjectIDFromHex(req.FileId)
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return nil, err
 	}
 	filter := bson.D{{"_id", fileId}}
 	err = server.mongoColls[FilesCollName].FindOne(server.ctx, filter).Decode(&fileFound)
@@ -231,11 +238,15 @@ func (server *SantaclausServerImpl) GetFile(_ context.Context, req *MaeSanta.Get
 		UserId:  fileFound.UserId.Hex()},
 	DiskId: fileFound.DiskId.Hex()} */
 
+	dirPath, err := server.findPathFromDir(fileFound.DirId)
+	if err != nil {
+		return nil, err
+	}
 	status := &MaeSanta.GetFileStatus{
 		File: &MaeSanta.FileMetadata{
 			ApproxMetadata: &MaeSanta.FileApproxMetadata{
 				Name:    fileFound.Name,
-				DirPath: server.findPathFromDir(fileFound.DirId),
+				DirPath: dirPath,
 				UserId:  fileFound.UserId.Hex()},
 			FileId:         fileFound.Id.Hex(),
 			DirId:          fileFound.DirId.Hex(),
@@ -249,15 +260,15 @@ func (server *SantaclausServerImpl) GetFile(_ context.Context, req *MaeSanta.Get
 	// in the case of using fileMetadata instead of approxMetadata, but I don't think it is usefull
 	// because this procedure should only be called when trying to download a file
 	// but then how do we know the file is downloadable ??
-	return status, err
-	/* todo is this the way of returning errors ? */
+	return status, nil
 }
 
 func (server *SantaclausServerImpl) UpdateFileSuccess(_ context.Context, req *MaeSanta.UpdateFileSuccessRequest) (status *MaeSanta.UpdateFileSuccessStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 
 	filter := bson.D{{"_id", fileId}}
@@ -305,14 +316,19 @@ func (server *SantaclausServerImpl) AddDirectory(_ context.Context, req *MaeSant
 	// find parent ID from req.Directory.DirPath
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	parentDir, err := server.findDirFromPath(req.Directory.DirPath, userId)
 	if err != nil {
 		// TODO check error in another way than that
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
-	dir := server.createDir(userId, parentDir.Id, req.Directory.Name)
+	dir, r := server.createDir(userId, parentDir.Id, req.Directory.Name)
+	if r != nil {
+		return nil, r
+	}
 	status = &MaeSanta.AddDirectoryStatus{DirId: dir.Id.Hex()}
 	return status, r
 }
@@ -381,7 +397,8 @@ func (server *SantaclausServerImpl) RemoveDirectory(_ context.Context, req *MaeS
 	dirId, err := primitive.ObjectIDFromHex(req.DirId)
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	status = &MaeSanta.RemoveDirectoryStatus{FileIdsToRemove: make([]string, 0)}
 	r = server.removeSubDirectories(&dirId, status)
@@ -398,7 +415,8 @@ func (server *SantaclausServerImpl) MoveDirectory(_ context.Context, req *MaeSan
 	newLocationDirId, r := primitive.ObjectIDFromHex(req.GetNewLocationDirId())
 
 	if r != nil {
-		log.Fatal(r)
+		// log.Fatal(r)
+		return status, r
 	}
 
 	if r != nil {
