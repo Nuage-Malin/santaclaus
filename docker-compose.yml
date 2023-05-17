@@ -18,6 +18,7 @@ services:
         networks:
             - mongo
             - maestro:santaclaus
+            - chouf:santaclaus
         depends_on:
             - mongo
         restart: on-failure
@@ -39,6 +40,8 @@ services:
 networks:
     mongo: null
     maestro:santaclaus:
+        external: true
+    chouf:santaclaus:
         external: true
 
 volumes:
