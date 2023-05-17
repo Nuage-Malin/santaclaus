@@ -3,7 +3,6 @@ package main
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	context "context"
-	"log"
 	"path/filepath"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,12 +18,14 @@ func (server *SantaclausServerImpl) getChildrenDirectories(dirId primitive.Objec
 	childDirIds, err := server.mongoColls[DirectoriesCollName].Find(server.ctx, filter)
 
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 
 	err = childDirIds.All(server.ctx, &dirs)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		return status, err
 	}
 	for _, dir := range dirs {
 		status, err = server.getOneDirectory(dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)

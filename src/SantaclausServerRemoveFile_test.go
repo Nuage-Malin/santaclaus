@@ -4,14 +4,12 @@ package main
 
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	"log"
 	"testing"
 )
 
 /* AddFile */
 
 func TestVirtualRemoveFile(t *testing.T) {
-	log.Println("start of virt remove file")
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
