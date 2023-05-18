@@ -19,6 +19,7 @@ services:
             - mongo
             - maestro:santaclaus
             - chouf:santaclaus
+            - santaclaus:bugle
         depends_on:
             - mongo
         restart: on-failure
@@ -42,6 +43,8 @@ networks:
     maestro:santaclaus:
         external: true
     chouf:santaclaus:
+        external: true
+    santaclaus:bugle:
         external: true
 
 volumes:

@@ -13,8 +13,13 @@ if [ "$1" == "--docker" ] ; then
     DOCKER_PID=$!
 fi
 
-./unit_tests
 
-if [ "$1" == "--docker" ] ; then
+function stop_docker() {
+  if [ "$1" == "--docker" ] ; then
     kill $DOCKER_PID ## todo launch docker in background from docker arguments and stop with docker command
-fi
+  fi
+}
+
+trap "echo \"Stopping docker container...\"; stop_docker $1; sleep 3; exit" SIGINT
+
+./unit_tests
