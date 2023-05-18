@@ -2,6 +2,7 @@ package main
 
 import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+	context "context"
 	"fmt"
 
 	"errors"
@@ -18,11 +19,11 @@ import (
 
 // service with Hardware malin
 
-func (server *SantaclausServerImpl) updateDiskBase() (r error) {
-	// todo grpc client for hardware manager
-	//		query getDisks
-	//		update (in mongo) disks that have changed according to hardware manager
-	hardwaremalinAddress := os.Getenv("HARDWAREMALIN_ADDRESS")
+func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error) {
+	//  grpc client for hardware manager
+	//  query getDisks
+	//	update (in mongo) disks that have changed according to hardware manager
+	hardwaremalinAddress := os.Getenv("SANTACLAUS_BUGLE_URI")
 	options := grpc.WithTransportCredentials(insecure.NewCredentials())
 
 	conn, r := grpc.Dial(hardwaremalinAddress, options)
@@ -32,7 +33,7 @@ func (server *SantaclausServerImpl) updateDiskBase() (r error) {
 	defer conn.Close()
 	client := pb.NewSantaclaus_HardwareMalin_ServiceClient(conn)
 	request := pb.GetDisksRequest{}
-	status, r := client.GetDisks(server.ctx, &request)
+	status, r := client.GetDisks(ctx, &request)
 	if r != nil {
 		return r
 	}
@@ -43,12 +44,12 @@ func (server *SantaclausServerImpl) updateDiskBase() (r error) {
 	return r
 }
 
-func (server *SantaclausServerImpl) findAvailableDisk(fileSize uint64, userId string) (found primitive.ObjectID, r error) {
+func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileSize uint64, userId string) (found primitive.ObjectID, r error) {
 	// todo query hardware malin for updates
 	var disks []disk
 	diskFound := disk{Id: primitive.NilObjectID, AvailableSize: 0, TotalSize: 0}
 	filter := bson.D{{"available_size", bson.D{{"$gt", fileSize}}}}
-	res, r := server.mongoColls[DisksCollName].Find(server.ctx, filter)
+	res, r := server.mongoColls[DisksCollName].Find(ctx, filter)
 
 	if r != nil {
 		return primitive.NilObjectID, r
@@ -56,7 +57,7 @@ func (server *SantaclausServerImpl) findAvailableDisk(fileSize uint64, userId st
 	if res == nil {
 		return primitive.NilObjectID, errors.New("Could not find disk big enough for file")
 	}
-	r = res.All(server.ctx, &disks)
+	r = res.All(ctx, &disks)
 	if r != nil {
 		return primitive.NilObjectID, r
 	}
@@ -67,8 +68,7 @@ func (server *SantaclausServerImpl) findAvailableDisk(fileSize uint64, userId st
 		}
 	}
 	if diskFound.Id == primitive.NilObjectID {
-		found = primitive.NewObjectID() // tmp, todo change
-		// return primitive.NilObjectID, errors.New("Could not find disk big enough for file") // todo uncomment
+		return primitive.NilObjectID, errors.New("Could not find disk big enough for file") // todo uncomment
 	}
 	// todo update disk size here ? or in other function ?
 	return found, nil

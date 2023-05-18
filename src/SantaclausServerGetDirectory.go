@@ -10,25 +10,23 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (server *SantaclausServerImpl) getChildrenDirectories(dirId primitive.ObjectID, recursive bool, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, dirId primitive.ObjectID, recursive bool, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
 	/* find all children directories thanks to a request with their parent ID (which is the current dirId) */
 
 	var dirs []directory
 	filter := bson.D{primitive.E{Key: "parent_id", Value: dirId}, {"deleted", false}}
-	childDirIds, err := server.mongoColls[DirectoriesCollName].Find(server.ctx, filter)
+	childDirIds, err := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
 
 	if err != nil {
-		// log.Fatal(err)
 		return status, err
 	}
 
-	err = childDirIds.All(server.ctx, &dirs)
+	err = childDirIds.All(ctx, &dirs)
 	if err != nil {
-		// log.Fatal(err)
 		return status, err
 	}
 	for _, dir := range dirs {
-		status, err = server.getOneDirectory(dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)
+		status, err = server.getOneDirectory(ctx, dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)
 		if err != nil {
 			return status, err
 		}
@@ -36,15 +34,15 @@ func (server *SantaclausServerImpl) getChildrenDirectories(dirId primitive.Objec
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) addFilesToIndex(dirId primitive.ObjectID, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId primitive.ObjectID, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
 	var files []file
 	filter := bson.D{{"dir_id", dirId}, {"deleted", false}} // get all files if not deleted
-	cur, err := server.mongoColls[FilesCollName].Find(server.ctx, filter)
+	cur, err := server.mongoColls[FilesCollName].Find(ctx, filter)
 
 	if err != nil {
 		return status, err
 	}
-	err = cur.All(server.ctx, &files)
+	err = cur.All(ctx, &files)
 
 	if err != nil {
 		return status, err
@@ -63,15 +61,15 @@ func (server *SantaclausServerImpl) addFilesToIndex(dirId primitive.ObjectID, di
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) addOneDirectoryToIndex(dirId primitive.ObjectID, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, dirId primitive.ObjectID, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
 	var dir directory
 	filter := bson.D{{"_id", dirId}, {"deleted", false}} // get the directory if exists and not deleted
-	err := server.mongoColls[DirectoriesCollName].FindOne(server.ctx, filter).Decode(&dir)
+	err := server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 
 	if err != nil {
 		return status, err
 	}
-	dirPath, err := server.findPathFromDir(dir.Id)
+	dirPath, err := server.findPathFromDir(ctx, dir.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -87,62 +85,70 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(dirId primitive.Objec
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) getOneDirectory(dirId primitive.ObjectID, recursive bool, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId primitive.ObjectID, recursive bool, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
 
 	// todo special case for root dir :
 	// if queried with nil dirId, queries root dir
 	// var dirs []directory
-	status, err := server.addOneDirectoryToIndex(dirId, status)
+	status, err := server.addOneDirectoryToIndex(ctx, dirId, status)
 
 	if err != nil {
 		return status, err
 	}
-	status, err = server.addFilesToIndex(dirId, dirPath, status)
+	status, err = server.addFilesToIndex(ctx, dirId, dirPath, status)
 	if err != nil {
 		return status, err
 	}
 	if recursive {
-		status, err = server.getChildrenDirectories(dirId, recursive, dirPath, status)
+		status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath, status)
 	}
+	print(err)
 	return status, err
 }
 
-func (server *SantaclausServerImpl) GetRootDirectory(recursive bool, userId primitive.ObjectID, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
-	rootDir, err := server.checkRootDirExistance(userId) // creates root dir if inexistant, else return existant
+func (server *SantaclausServerImpl) GetRootDirectory(ctx context.Context, recursive bool, userId primitive.ObjectID, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
+	rootDir, err := server.checkRootDirExistence(ctx, userId) // creates root dir if inexistant, else return existant
+
 	if err != nil {
 		return nil, err
 	}
-
-	return server.getOneDirectory(rootDir.Id, recursive, "/", status)
+	return server.getOneDirectory(ctx, rootDir.Id, recursive, "/", status)
 }
 
-func (server *SantaclausServerImpl) GetDirectory(_ context.Context, req *MaeSanta.GetDirectoryRequest) (status *MaeSanta.GetDirectoryStatus, r error) {
-	userId, err := primitive.ObjectIDFromHex(req.UserId)
+func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *MaeSanta.GetDirectoryRequest) (status *MaeSanta.GetDirectoryStatus, r error) {
+	userId, r := primitive.ObjectIDFromHex(req.UserId)
+
+	if r != nil {
+		return nil, r
+	}
 
 	status = &MaeSanta.GetDirectoryStatus{
 		SubFiles: &MaeSanta.FilesIndex{
 			FileIndex: []*MaeSanta.FileMetadata{},
-			DirIndex:  []*MaeSanta.DirMetadata{}}}
+			DirIndex:  []*MaeSanta.DirMetadata{},
+		},
+	}
 
 	if req.DirId == nil {
-		return server.GetRootDirectory(req.IsRecursive, userId, status)
+		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
 	}
-	dirId, err := primitive.ObjectIDFromHex(*req.DirId)
+	dirId, r := primitive.ObjectIDFromHex(*req.DirId)
 
-	if err != nil {
+	if r != nil {
 		return nil, r
 	}
 	if dirId == primitive.NilObjectID { // todo does it actually ever branches through that ?
-		return server.GetRootDirectory(req.IsRecursive, userId, status)
+		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
 	}
 
 	if dirId != primitive.NilObjectID {
-		dirPath, err := server.findPathFromDir(dirId)
+		dirPath, err := server.findPathFromDir(ctx, dirId)
 		if err != nil {
 			return nil, err
 		}
-		return server.getOneDirectory(dirId, req.IsRecursive, dirPath, status)
+
+		return server.getOneDirectory(ctx, dirId, req.IsRecursive, dirPath, status)
 	} else { // todo does it actually ever branches through that ?
-		return server.GetRootDirectory(req.IsRecursive, userId, status)
+		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
 	}
 }

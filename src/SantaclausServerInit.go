@@ -12,8 +12,7 @@ import (
 
 func (server *SantaclausServerImpl) setMongoClient(mongoURI string) {
 	// var cancelFunc context.CancelFunc
-	server.ctx /* cancelFunc */, _ = context.WithTimeout(context.Background(), 10*time.Second)
-	// server.ctx = context.TODO()
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	log.Printf("mongoURI: %v\n", mongoURI)
 	clientOptions := options.Client().ApplyURI(mongoURI)
 
@@ -22,17 +21,11 @@ func (server *SantaclausServerImpl) setMongoClient(mongoURI string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server.mongoClient, err = mongo.Connect(server.ctx, clientOptions)
+	server.mongoClient, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// defer func() { // TODO
-	// if err := server.mongoClient.Disconnect(context.TODO()); err != nil {
-	// panic(err)
-	// }
-	// }()
-
-	err = server.mongoClient.Ping(server.ctx, nil)
+	err = server.mongoClient.Ping(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +36,6 @@ func (server *SantaclausServerImpl) setMongoDatabase(dbName string) {
 	if server.mongoDb == nil {
 		log.Fatalf("Could not find database \"%s\"", dbName)
 	}
-
 }
 
 func (server *SantaclausServerImpl) setMongoCollections(collNames []string) {
