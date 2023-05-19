@@ -4,12 +4,16 @@ package main
 
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+	context "context"
 	"testing"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestGetFile(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
@@ -21,31 +25,31 @@ func TestGetFile(t *testing.T) {
 		FileSize: fileSize}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 	if createFileStatus.DiskId == "" || createFileStatus.FileId == "" {
-		t.Errorf("DiskId or FileId is empty")
+		t.Fatalf("DiskId or FileId is empty")
 	}
 
 	request := MaeSanta.GetFileRequest{FileId: createFileStatus.FileId}
 	status, err := server.GetFile(ctx, &request)
 
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if status.File.ApproxMetadata.DirPath != file.DirPath || status.File.ApproxMetadata.Name != file.Name || status.File.ApproxMetadata.UserId != file.UserId { // check approx metadata
-		t.Errorf("Metadata about file retrieved is different from added one")
+		t.Fatalf("Metadata about file retrieved is different from added one")
 	}
 	if status.File.FileId != createFileStatus.FileId || status.DiskId != createFileStatus.DiskId {
-		t.Errorf("Ids inserted and retrieved don't match :\nfileId inserted : %s\tfileId retrieved : %s\ndiskId inserted : %s\tdiskId retrieved %s\n", createFileStatus.FileId, status.File.FileId, createFileStatus.DiskId, status.DiskId)
+		t.Fatalf("Ids inserted and retrieved don't match :\nfileId inserted : %s\tfileId retrieved : %s\ndiskId inserted : %s\tdiskId retrieved %s\n", createFileStatus.FileId, status.File.FileId, createFileStatus.DiskId, status.DiskId)
 	}
 	userIdPrimitive, err := primitive.ObjectIDFromHex(userId)
-	dir, err := server.findDirFromPath(file.DirPath, userIdPrimitive)
+	dir, err := server.findDirFromPath(ctx, file.DirPath, userIdPrimitive)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if status.File.DirId != dir.Id.Hex() {
-		t.Errorf("File retrieved is in different directory than the one inserted")
+		t.Fatalf("File retrieved is in different directory than the one inserted")
 	}
 	// todo check content of what I got
 }
@@ -53,6 +57,8 @@ func TestGetFile(t *testing.T) {
 /*
 
 func TestGetFiles(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(),  4*time.Second)
+
 	dir := MaeSanta.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: "/",
@@ -61,10 +67,10 @@ func TestGetFiles(t *testing.T) {
 
 	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
-		t.Errorf("DirId is empty") // log and fail
+		t.Fatalf("DirId is empty") // log and fail
 	}
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
@@ -77,21 +83,21 @@ func TestGetFiles(t *testing.T) {
 		FileSize: fileSize}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 	if createFileStatus.DiskId == "" || createFileStatus.FileId == "" {
-		t.Errorf("DiskId or FileId is empty")
+		t.Fatalf("DiskId or FileId is empty")
 	}
 
 	request := MaeSanta.GetDirectoryRequest{DirId: &createDirStatus.DirId, UserId: userId, IsRecursive: true}
-	status, err := server.GetDirectory(server.ctx, &request)
+	status, err := server.GetDirectory(ctx, &request)
 
 	for index, indexedFile := range status.SubFiles.Index {
 		if index >= 1 {
-			t.Errorf("Inserted only one file but several retrieved in index")
+			t.Fatalf("Inserted only one file but several retrieved in index")
 		}
 		if file.DirPath != indexedFile.ApproxMetadata.DirPath || file.Name != indexedFile.ApproxMetadata.Name || file.UserId != indexedFile.ApproxMetadata.UserId {
-			t.Errorf("File in index different from added one")
+			t.Fatalf("File in index different from added one")
 		}
 	}
 	// todo check content of what I got

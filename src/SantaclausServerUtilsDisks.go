@@ -46,6 +46,10 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 
 func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileSize uint64, userId string) (found primitive.ObjectID, r error) {
 	// todo query hardware malin for updates
+	r = server.updateDiskBase(ctx)
+	if r != nil {
+		return found, r
+	}
 	var disks []disk
 	diskFound := disk{Id: primitive.NilObjectID, AvailableSize: 0, TotalSize: 0}
 	filter := bson.D{{"available_size", bson.D{{"$gt", fileSize}}}}

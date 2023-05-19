@@ -3,7 +3,6 @@ package main
 // todo put this file in different directory
 
 import (
-	context "context"
 	"fmt"
 	"log"
 
@@ -11,12 +10,10 @@ import (
 )
 
 var server *SantaclausServerImpl = NewSantaclausServerImpl()
-var ctx context.Context
-
 var userId string = primitive.NewObjectID().Hex()
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile) // eneable line printing with logs // TODO put somewhere else
+	log.SetFlags( /* log.LstdFlags | */ log.Lshortfile) // eneable line printing with logs // TODO put somewhere else
 }
 
 var unique_count int = 0

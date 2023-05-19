@@ -20,7 +20,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 	if err != nil {
 		return status, err
 	}
-	foundDirectory, err := server.findDirFromPath(ctx, req.File.DirPath, userId)
+	foundDirectory, err := server.findDirFromPath(ctx, req.File.DirPath, userId) // todo replace path with dir Id
 	if err != nil {
 		return status, err
 		// TODO do something
@@ -309,12 +309,12 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *MaeSa
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
 
 	if err != nil {
-		return status, err
+		return nil, err
 	}
 	parentDir, err := server.findDirFromPath(ctx, req.Directory.DirPath, userId)
 	if err != nil {
 		// TODO check error in another way than that
-		return status, err
+		return nil, err
 	}
 	dir, r := server.createDir(ctx, userId, parentDir.Id, req.Directory.Name)
 	if r != nil {

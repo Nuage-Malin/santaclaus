@@ -55,7 +55,7 @@ func (server *SantaclausServerImpl) checkRootDirExistence(ctx context.Context, u
 	res := server.mongoColls[DirectoriesCollName].FindOne(ctx, targetDir)
 
 	if res.Err() != nil {
-		if err == mongo.ErrNoDocuments {
+		if res.Err() == mongo.ErrNoDocuments {
 
 			log.Println("Couldn't find root dir, creating it") // todo do logs so it prints only when debuging
 			return server.createRootDir(ctx, userId)           // If the root directory doesn't exist, we create it

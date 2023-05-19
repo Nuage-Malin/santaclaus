@@ -4,7 +4,9 @@ package main
 
 import (
 	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+	context "context"
 	"testing"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -12,6 +14,7 @@ import (
 /* AddFile */
 
 func TestAddFile(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
@@ -24,14 +27,15 @@ func TestAddFile(t *testing.T) {
 		FileSize: fileSize}
 	status, err := server.AddFile(ctx, &request)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 	if status.DiskId == primitive.NilObjectID.Hex() || status.FileId == primitive.NilObjectID.Hex() {
-		t.Errorf("DiskId or FileId is empty")
+		t.Fatalf("DiskId or FileId is empty")
 	}
 }
 
 func TestAddFileSameUser(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	file := MaeSanta.FileApproxMetadata{
 		DirPath: "/",
@@ -44,10 +48,10 @@ func TestAddFileSameUser(t *testing.T) {
 		FileSize: fileSize}
 	status, err := server.AddFile(ctx, &request)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 	if status.DiskId == primitive.NilObjectID.Hex() || status.FileId == primitive.NilObjectID.Hex() {
-		t.Errorf("DiskId or FileId is empty") // log and fail
+		t.Fatalf("DiskId or FileId is empty") // log and fail
 	}
 }
 
