@@ -202,7 +202,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *MaeSanta.
 		return nil, errors.New("Could not find file to be updated")
 	}
 	if res.ModifiedCount != 1 {
-		log.Print(res.ModifiedCount)
+		// log.Print(res.ModifiedCount)
 		return nil, errors.New("Could not modify file to be updated")
 	}
 
@@ -455,7 +455,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeS
 		return nil, errors.New("Could not find file to be updated")
 	}
 	if res.ModifiedCount != 1 {
-		log.Print(res.ModifiedCount)
+		// log.Print(res.ModifiedCount)
 		return nil, errors.New("Could not modify file to be updated")
 	}
 	status = &MaeSanta.MoveDirectoryStatus{}

@@ -102,7 +102,7 @@ func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId p
 	if recursive {
 		status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath, status)
 	}
-	print(err)
+	// print(err)
 	return status, err
 }
 

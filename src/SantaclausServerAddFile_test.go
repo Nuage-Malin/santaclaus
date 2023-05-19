@@ -20,7 +20,7 @@ func TestAddFile(t *testing.T) {
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	var fileSize uint64
+	var fileSize uint64 = 1
 
 	request := MaeSanta.AddFileRequest{
 		File:     &file,
@@ -41,7 +41,7 @@ func TestAddFileSameUser(t *testing.T) {
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	var fileSize uint64
+	var fileSize uint64 = 1
 
 	request := MaeSanta.AddFileRequest{
 		File:     &file,

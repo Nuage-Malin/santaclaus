@@ -47,6 +47,7 @@ type directory struct {
 
 type disk struct {
 	Id            primitive.ObjectID `bson:"_id"`
+	physicalId    string             `bson:"physical_id"`
 	TotalSize     uint64             `bson:"total_size"`
 	AvailableSize uint64             `bson:"available_size"`
 }

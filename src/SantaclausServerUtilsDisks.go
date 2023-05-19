@@ -3,13 +3,14 @@ package main
 import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	context "context"
-	"fmt"
+	"log"
 
 	"errors"
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -24,9 +25,9 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	//  query getDisks
 	//	update (in mongo) disks that have changed according to hardware manager
 	hardwaremalinAddress := os.Getenv("SANTACLAUS_BUGLE_URI")
-	options := grpc.WithTransportCredentials(insecure.NewCredentials())
+	grpcOpts := grpc.WithTransportCredentials(insecure.NewCredentials())
 
-	conn, r := grpc.Dial(hardwaremalinAddress, options)
+	conn, r := grpc.Dial(hardwaremalinAddress, grpcOpts)
 	if r != nil {
 		return r
 	}
@@ -37,10 +38,34 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	if r != nil {
 		return r
 	}
-	fmt.Printf("status.Disks: %v\n", status.Disks)
-	// for _, disk := status.Disks {
-	// continue
-	// }
+	filter := bson.D{}
+	update := bson.D{}
+	// opts := options.Update().SetUpsert(true)
+
+	for _, newDisk := range status.GetDisks() {
+		filter = bson.D{{"physical_id", newDisk.Id}}
+		findRes := server.mongoColls[DisksCollName].FindOne(ctx, filter)
+		var foundDisk disk
+
+		if findRes != nil {
+			actFindRes := findRes.Decode(&foundDisk)
+			if actFindRes != mongo.ErrNoDocuments {
+				continue
+			}
+		}
+
+		update = bson.D{{"_id", primitive.NewObjectID()}, {"physical_id", newDisk.Id}, {"total_size", 1000000000}, {"available_size", 1000000000}} // todo put real values
+
+		insertRes, err := server.mongoColls[DisksCollName].InsertOne(ctx, update)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if insertRes == nil {
+			continue
+		}
+
+	}
 	return r
 }
 
@@ -65,13 +90,13 @@ func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileS
 	if r != nil {
 		return primitive.NilObjectID, r
 	}
-
 	for _, disk := range disks {
 		if diskFound.AvailableSize < disk.AvailableSize {
 			diskFound.AvailableSize = disk.AvailableSize
+			found = disk.Id
 		}
 	}
-	if diskFound.Id == primitive.NilObjectID {
+	if found == primitive.NilObjectID {
 		return primitive.NilObjectID, errors.New("Could not find disk big enough for file") // todo uncomment
 	}
 	// todo update disk size here ? or in other function ?
