@@ -9,10 +9,8 @@ services:
             args:
                 EXEC_TYPE: ${EXEC_TYPE}
         container_name: santaclaus
-        environment:
-            SANTACLAUS_ADDRESS: ${SANTACLAUS_ADDRESS}
-            SANTACLAUS_MONGO_DB: ${SANTACLAUS_MONGO_DB}
-            SANTACLAUS_MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_MACHINE}:27017/${SANTACLAUS_MONGO_DB}?authSource=admin
+        env_file:
+            - ${SANTACLAUS_ENV_FILE}
         expose:
             - ${SANTACLAUS_PORT}
         ports:
