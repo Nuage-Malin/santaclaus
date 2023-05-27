@@ -57,6 +57,7 @@ if $ARG_BUILD_SERVICE; then
 fi
 
 if $ARG_BUILD_TESTS; then
+    echo "Not implemented yet" >&2
     # TODO: Build system tests (and check exit status)
 fi
 
@@ -66,6 +67,7 @@ if $ARG_RUN_SERVICE; then
 fi
 
 if $ARG_RUN_TESTS; then
+    echo "Not implemented yet" >&2
     # set -o allexport
     # source $CURRENT_FILE_DIR/../env/system_tests.env
     # set +o allexport
