@@ -16,38 +16,15 @@ services:
         ports:
             - ${SANTACLAUS_PORT}:${SANTACLAUS_PORT}
         networks:
-            - mongo
             - maestro:santaclaus
             - chouf:santaclaus
             - santaclaus:bugle
-        depends_on:
-            - mongo
         restart: unless-stopped
 
-    mongo:
-        image: mongo:6
-        environment:
-            MONGO_INITDB_DATABASE: ${SANTACLAUS_MONGO_DB}
-            MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-        expose:
-            - ${MONGO_PORT}
-        ports:
-            - ${MONGO_PORT}:27017
-        networks:
-            - mongo
-        volumes:
-            - mongo:/data/db
-        restart: always
-
 networks:
-    mongo: null
     maestro:santaclaus:
         external: true
     chouf:santaclaus:
         external: true
     santaclaus:bugle:
         external: true
-
-volumes:
-    mongo: null
