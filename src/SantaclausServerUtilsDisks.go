@@ -24,11 +24,12 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	//  grpc client for hardware manager
 	//  query getDisks
 	//	update (in mongo) disks that have changed according to hardware manager
-	hardwaremalinAddress := os.Getenv("SANTACLAUS_BUGLE_URI")
+	bugleAddress := os.Getenv("SANTACLAUS_BUGLE_URI")
 	grpcOpts := grpc.WithTransportCredentials(insecure.NewCredentials())
 
-	conn, r := grpc.Dial(hardwaremalinAddress, grpcOpts)
+	conn, r := grpc.Dial(bugleAddress, grpcOpts)
 	if r != nil {
+		log.Println("Fail to reach bugle to update disks")
 		return r
 	}
 	defer conn.Close()
