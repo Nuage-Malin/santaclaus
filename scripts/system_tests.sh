@@ -4,17 +4,19 @@ ARG_BUILD_SERVICE=false # --build-service
 ARG_BUILD_TESTS=false   # --build-tests
 ARG_RUN_SERVICE=false   # --run-service
 ARG_RUN_TESTS=false     # --run-tests
+ARG_STOP=false          # --stop
 
 CURRENT_FILE_DIR="$(dirname $0)/"
 
 usage()
 {
-    echo "Usage: $0 [--help] [--build-service] [--build-tests] [--run-service] [--run-tests]"
+    echo "Usage: $0 [--help] [--build-service] [--build-tests] [--run-service] [--run-tests] [--stop]"
     echo "\t--help: Prints this message"
     echo "\t--build-service: Build santaclaus"
     echo "\t--build-tests: Build system tests"
     echo "\t--run-service: Run santaclaus"
     echo "\t--run-tests: Run system tests"
+    echo "\t--stop: Stop service"
     exit 0
 }
 
@@ -43,6 +45,9 @@ for arg in "$@"; do
         ;;
         --run-tests)
             ARG_RUN_TESTS=true
+        ;;
+        --stop)
+            ARG_STOP=true
         ;;
         *)
             echo "Invalid option: $arg" >&2
@@ -75,6 +80,11 @@ if $ARG_RUN_TESTS; then
     # exec ./santaclaus
     # check_exit_failure "System tests failed"
     # TODO: Run system tests (and check exit status) when build will be done
+fi
+
+if $ARG_STOP; then
+    docker compose --profile launch --env-file env/santaclaus.env down
+    check_exit_failure "Failed to stop santaclaus"
 fi
 
 exit 0
