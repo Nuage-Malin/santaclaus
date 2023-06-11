@@ -405,37 +405,47 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeS
 	newLocationDirId, r := primitive.ObjectIDFromHex(req.GetNewLocationDirId())
 
 	if r != nil {
-		return status, r
+		return nil, r
 	}
 
+	// If dirId is incorrect, return error
+	filter := bson.D{{"_id", newLocationDirId}}
+	var parentDir directory
+	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&parentDir)
 	if r != nil {
 		return nil, r
 	}
-	// If dirId is incorrect, return error
-	filter := bson.D{{"_id", newLocationDirId}}
+	var update bson.D
+
+	filter = bson.D{{"_id", dirId}}
 	var dir directory
 	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 	if r != nil {
 		return nil, r
 	}
-	var update bson.D
+
 	if newLocationDirId != dirId {
-		filter = bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}
+		if req.Name != nil {
+			filter = bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}
+		} else {
+			filter = bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}
+		}
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r == nil {
 			return nil, errors.New("Directory name already exists in this directory, aborting move")
 		}
-		filter = bson.D{{"_id", newLocationDirId}}
-		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
-		if r != nil {
-			return nil, r
-		}
-		if dir.ParentId == dirId {
+		if parentDir.ParentId == dirId {
 			return nil, errors.New("Cannot store directory in its subdirectory")
 		}
-
-		update = bson.D{{"$set", bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}}}
+		if req.Name != nil {
+			update = bson.D{{"$set", bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}}}
+		} else {
+			update = bson.D{{"$set", bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}}}
+		}
 	} else {
+		if req.Name == nil {
+			return nil, errors.New("No new name nor new location id provided for directory move")
+		}
 		filter = bson.D{{"name", req.Name}, {"parent_id", dir.ParentId}}
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r == nil {
