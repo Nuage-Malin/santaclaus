@@ -402,18 +402,28 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *Ma
 func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeSanta.MoveDirectoryRequest) (status *MaeSanta.MoveDirectoryStatus, r error) {
 	// todo if nil object id for dirId, move to root dir ?
 	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
-	newLocationDirId, r := primitive.ObjectIDFromHex(req.GetNewLocationDirId())
 
 	if r != nil {
 		return nil, r
 	}
+	var newLocationDirId primitive.ObjectID = primitive.NilObjectID
+	if req.NewLocationDirId != nil {
+		newLocationDirId, r = primitive.ObjectIDFromHex(req.GetNewLocationDirId())
 
+		if r != nil {
+			return nil, r
+		}
+	}
+	var filter bson.D
 	// If dirId is incorrect, return error
-	filter := bson.D{{"_id", newLocationDirId}}
 	var parentDir directory
-	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&parentDir)
-	if r != nil {
-		return nil, r
+
+	if newLocationDirId != primitive.NilObjectID {
+		filter = bson.D{{"_id", newLocationDirId}}
+		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&parentDir)
+		if r != nil {
+			return nil, r
+		}
 	}
 	var update bson.D
 
@@ -424,7 +434,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeS
 		return nil, r
 	}
 
-	if newLocationDirId != dirId {
+	if newLocationDirId != primitive.NilObjectID && newLocationDirId != dirId {
 		if req.Name != nil {
 			filter = bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}
 		} else {
