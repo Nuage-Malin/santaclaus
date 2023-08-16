@@ -1,7 +1,8 @@
 package main
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
 	"flag"
 	"log"
 	"net"
@@ -18,9 +19,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	defer listener.Close()
-	var santaClausServer MaeSanta.Maestro_Santaclaus_ServiceServer = NewSantaclausServerImpl()
+	var santaClausServer pb.Maestro_Santaclaus_ServiceServer = NewSantaclausServerImpl()
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
-	MaeSanta.RegisterMaestro_Santaclaus_ServiceServer(grpcServer, santaClausServer)
+	pb.RegisterMaestro_Santaclaus_ServiceServer(grpcServer, santaClausServer)
 	grpcServer.Serve(listener)
 }

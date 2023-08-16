@@ -2,7 +2,8 @@ package main
 
 import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+
+	"context"
 	"log"
 
 	"errors"
@@ -20,22 +21,33 @@ import (
 
 // service with Hardware malin
 
-func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error) {
+func getDisksFromBugle(ctx context.Context) ([]*pb.Disk, error) {
 	//  grpc client for hardware manager
 	//  query getDisks
 	//	update (in mongo) disks that have changed according to hardware manager
 	bugleAddress := os.Getenv("SANTACLAUS_BUGLE_URI")
 	grpcOpts := grpc.WithTransportCredentials(insecure.NewCredentials())
-
 	conn, r := grpc.Dial(bugleAddress, grpcOpts)
+
 	if r != nil {
+		// todo query DB containing disks
 		log.Println("Fail to reach bugle to update disks")
-		return r
+		return nil, r
 	}
 	defer conn.Close()
 	client := pb.NewSantaclaus_HardwareMalin_ServiceClient(conn)
 	request := pb.GetDisksRequest{}
 	status, r := client.GetDisks(ctx, &request)
+
+	if r != nil {
+		return nil, r
+	}
+	return status.GetDisks(), nil
+}
+
+func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error) {
+	disks, r := getDisksFromBugle(ctx)
+
 	if r != nil {
 		return r
 	}
@@ -43,7 +55,7 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	update := bson.D{}
 	// opts := options.Update().SetUpsert(true)
 
-	for _, newDisk := range status.GetDisks() {
+	for _, newDisk := range disks {
 		filter = bson.D{{"physical_id", newDisk.Id}}
 		findRes := server.mongoColls[DisksCollName].FindOne(ctx, filter)
 		var foundDisk disk
@@ -57,6 +69,7 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 
 		update = bson.D{{"_id", primitive.NewObjectID()}, {"physical_id", newDisk.Id}, {"total_size", 1000000000}, {"available_size", 1000000000}} // todo put real values
 
+		// update DB containing disks
 		insertRes, err := server.mongoColls[DisksCollName].InsertOne(ctx, update)
 		if err != nil {
 			log.Println(err)
@@ -65,17 +78,14 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 		if insertRes == nil {
 			continue
 		}
-
 	}
 	return r
 }
 
 func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileSize uint64, userId string) (found primitive.ObjectID, r error) {
 	// todo query hardware malin for updates
-	r = server.updateDiskBase(ctx)
-	if r != nil {
-		return found, r
-	}
+	server.updateDiskBase(ctx) // ignore error : if bugle can't update, we use the existing disk DB
+
 	var disks []disk
 	diskFound := disk{Id: primitive.NilObjectID, AvailableSize: 0, TotalSize: 0}
 	filter := bson.D{{"available_size", bson.D{{"$gt", fileSize}}}}
@@ -91,6 +101,7 @@ func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileS
 	if r != nil {
 		return primitive.NilObjectID, r
 	}
+	// todo change this algorithm to something more accurate, with a real choice that's optimised
 	for _, disk := range disks {
 		if diskFound.AvailableSize < disk.AvailableSize {
 			diskFound.AvailableSize = disk.AvailableSize

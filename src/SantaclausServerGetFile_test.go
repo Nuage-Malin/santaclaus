@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"testing"
 	"time"
 
@@ -14,13 +15,13 @@ import (
 func TestGetFile(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
-	createFileRequest := MaeSanta.AddFileRequest{
+	createFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
@@ -31,7 +32,7 @@ func TestGetFile(t *testing.T) {
 		t.Fatalf("DiskId or FileId is empty")
 	}
 
-	request := MaeSanta.GetFileRequest{FileId: createFileStatus.FileId}
+	request := pb.GetFileRequest{FileId: createFileStatus.FileId}
 	status, err := server.GetFile(ctx, &request)
 
 	if err != nil {
@@ -59,11 +60,11 @@ func TestGetFile(t *testing.T) {
 func TestGetFiles(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(),  4*time.Second)
 
-	dir := MaeSanta.FileApproxMetadata{
+	dir := pb.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: "/",
 		UserId:  userId}
-	var createDirrequest = MaeSanta.AddDirectoryRequest{Directory: &dir}
+	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir}
 
 	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
 	if err != nil {
@@ -72,13 +73,13 @@ func TestGetFiles(t *testing.T) {
 	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("DirId is empty") // log and fail
 	}
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
-	createFileRequest := MaeSanta.AddFileRequest{
+	createFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
@@ -89,7 +90,7 @@ func TestGetFiles(t *testing.T) {
 		t.Fatalf("DiskId or FileId is empty")
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: &createDirStatus.DirId, UserId: userId, IsRecursive: true}
+	request := pbrectoryRequest{DirId: &createDirStatus.DirId, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(ctx, &request)
 
 	for index, indexedFile := range status.SubFiles.Index {

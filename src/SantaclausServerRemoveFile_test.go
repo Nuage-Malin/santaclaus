@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"testing"
 	"time"
 )
@@ -14,13 +15,13 @@ import (
 func TestVirtualRemoveFile(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
-	addFileRequest := MaeSanta.AddFileRequest{
+	addFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	addFileStatus, err := server.AddFile(ctx, &addFileRequest)
@@ -31,14 +32,14 @@ func TestVirtualRemoveFile(t *testing.T) {
 		t.Fatalf("DiskId or FileId is empty")
 	}
 
-	request := MaeSanta.RemoveFileRequest{FileId: addFileStatus.FileId}
+	request := pb.RemoveFileRequest{FileId: addFileStatus.FileId}
 	_, err = server.VirtualRemoveFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure to check the file
 	// todo maybe use the server to query into the database and check if the file has the 'removed' field set
-	getDirRequest := MaeSanta.GetDirectoryRequest{
+	getDirRequest := pb.GetDirectoryRequest{
 		DirId: nil, UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
 	if err != nil {
@@ -55,13 +56,13 @@ func TestVirtualRemoveFile(t *testing.T) {
 func TestPhysicalRemoveFile(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
-	addFileRequest := MaeSanta.AddFileRequest{
+	addFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	addFileStatus, err := server.AddFile(ctx, &addFileRequest)
@@ -72,7 +73,7 @@ func TestPhysicalRemoveFile(t *testing.T) {
 		t.Fatalf("DiskId or FileId is empty")
 	}
 
-	request := MaeSanta.RemoveFileRequest{FileId: addFileStatus.FileId}
+	request := pb.RemoveFileRequest{FileId: addFileStatus.FileId}
 	_, err = server.VirtualRemoveFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -84,7 +85,7 @@ func TestPhysicalRemoveFile(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure
-	getDirRequest := MaeSanta.GetDirectoryRequest{
+	getDirRequest := pb.GetDirectoryRequest{
 		DirId: nil, UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
 	if err != nil {

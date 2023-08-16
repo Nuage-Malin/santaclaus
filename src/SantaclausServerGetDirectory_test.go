@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -15,11 +16,11 @@ import (
 func TestGetDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	dir := MaeSanta.FileApproxMetadata{
+	dir := pb.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: "/",
 		UserId:  userId}
-	var createDirrequest = MaeSanta.AddDirectoryRequest{Directory: &dir}
+	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir}
 
 	addDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
 	if err != nil {
@@ -28,13 +29,13 @@ func TestGetDirectory(t *testing.T) {
 	if addDirStatus.DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId returned is nil", dir.Name) // log and fail
 	}
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
-	createFileRequest := MaeSanta.AddFileRequest{
+	createFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
@@ -45,7 +46,7 @@ func TestGetDirectory(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId, IsRecursive: true}
+	request := pb.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(ctx, &request)
 	if err != nil {
 		t.Fatal(err)
@@ -81,14 +82,14 @@ func TestGetDirectory(t *testing.T) {
 func TestGetSubDirectories(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir [2]MaeSanta.FileApproxMetadata
-	dir[0] = MaeSanta.FileApproxMetadata{
+	var dir [2]pb.FileApproxMetadata
+	dir[0] = pb.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: "/",
 		UserId:  userId}
-	var createDirRequest [2]MaeSanta.AddDirectoryRequest
-	createDirRequest[0] = MaeSanta.AddDirectoryRequest{Directory: &dir[0]}
-	var addDirStatus [2]*MaeSanta.AddDirectoryStatus
+	var createDirRequest [2]pb.AddDirectoryRequest
+	createDirRequest[0] = pb.AddDirectoryRequest{Directory: &dir[0]}
+	var addDirStatus [2]*pb.AddDirectoryStatus
 	var err error
 	addDirStatus[0], err = server.AddDirectory(ctx, &createDirRequest[0])
 	if err != nil {
@@ -97,12 +98,12 @@ func TestGetSubDirectories(t *testing.T) {
 	if addDirStatus[0].DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
 	}
-	var file [2]MaeSanta.FileApproxMetadata
-	file[0] = MaeSanta.FileApproxMetadata{
+	var file [2]pb.FileApproxMetadata
+	file[0] = pb.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: filepath.Join(dir[0].DirPath, dir[0].Name),
 		UserId:  userId}
-	createFileRequest := MaeSanta.AddFileRequest{File: &file[0]}
+	createFileRequest := pb.AddFileRequest{File: &file[0]}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
 	if err != nil {
 		t.Fatal(err)
@@ -112,11 +113,11 @@ func TestGetSubDirectories(t *testing.T) {
 
 	}
 
-	dir[1] = MaeSanta.FileApproxMetadata{
+	dir[1] = pb.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: filepath.Join(dir[0].DirPath, dir[0].Name),
 		UserId:  userId}
-	createDirRequest[1] = MaeSanta.AddDirectoryRequest{Directory: &dir[1]}
+	createDirRequest[1] = pb.AddDirectoryRequest{Directory: &dir[1]}
 
 	addDirStatus[1], err = server.AddDirectory(ctx, &createDirRequest[1])
 	if err != nil {
@@ -125,11 +126,11 @@ func TestGetSubDirectories(t *testing.T) {
 	if addDirStatus[1].DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId is empty", dir[1].Name) // log and fail
 	}
-	file[1] = MaeSanta.FileApproxMetadata{
+	file[1] = pb.FileApproxMetadata{
 		Name:    getUniqueName(),
 		DirPath: filepath.Join(dir[1].DirPath, dir[1].Name),
 		UserId:  userId}
-	createFileRequest = MaeSanta.AddFileRequest{File: &file[1]}
+	createFileRequest = pb.AddFileRequest{File: &file[1]}
 	createFileStatus, err = server.AddFile(ctx, &createFileRequest)
 	if err != nil {
 		t.Fatal(err)
@@ -139,7 +140,7 @@ func TestGetSubDirectories(t *testing.T) {
 
 	}
 
-	request := MaeSanta.GetDirectoryRequest{DirId: &addDirStatus[0].DirId, UserId: userId, IsRecursive: true}
+	request := pb.GetDirectoryRequest{DirId: &addDirStatus[0].DirId, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(ctx, &request)
 
 	if err != nil {
@@ -169,7 +170,7 @@ func TestGetSubDirectories(t *testing.T) {
 func TestGetRootDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	request := MaeSanta.GetDirectoryRequest{DirId: nil, UserId: userId, IsRecursive: true}
+	request := pb.GetDirectoryRequest{DirId: nil, UserId: userId, IsRecursive: true}
 	status, err := server.GetDirectory(ctx, &request)
 
 	if err != nil {

@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -18,13 +19,13 @@ func TestRemoveDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	var err error
-	var file MaeSanta.FileApproxMetadata
+	var file pb.FileApproxMetadata
 	var fileSize uint64 // zero value
 	const nbFilesInDir = 10
-	var addFileStatuses [nbFilesInDir]*MaeSanta.AddFileStatus
+	var addFileStatuses [nbFilesInDir]*pb.AddFileStatus
 
-	addDirReq := MaeSanta.AddDirectoryRequest{
-		Directory: &MaeSanta.FileApproxMetadata{
+	addDirReq := pb.AddDirectoryRequest{
+		Directory: &pb.FileApproxMetadata{
 			Name:    "directoryToBeRemoved",
 			DirPath: "/",
 			UserId:  userId,
@@ -37,12 +38,12 @@ func TestRemoveDirectory(t *testing.T) {
 		t.Fatalf("Could not add dir, status contains nil dirId")
 	}
 	for i := 0; i < nbFilesInDir; i++ { // todo an other test with recursive directory creation
-		file = MaeSanta.FileApproxMetadata{
+		file = pb.FileApproxMetadata{
 			DirPath: filepath.Join(addDirReq.Directory.DirPath, addDirReq.Directory.Name),
 			Name:    getUniqueName(),
 			UserId:  userId}
 
-		addFileRequest := MaeSanta.AddFileRequest{
+		addFileRequest := pb.AddFileRequest{
 			File:     &file,
 			FileSize: fileSize}
 		addFileStatuses[i], err = server.AddFile(ctx, &addFileRequest)
@@ -53,14 +54,14 @@ func TestRemoveDirectory(t *testing.T) {
 			t.Fatalf("DiskId or FileId is empty, file name : %s", file.Name)
 		}
 	}
-	request := MaeSanta.RemoveDirectoryRequest{DirId: addDirStatus.DirId}
+	request := pb.RemoveDirectoryRequest{DirId: addDirStatus.DirId}
 	_, err = server.RemoveDirectory(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure
 	// todo maybe use the server to query into the database and check if the directory has been removed
-	getDirReq := MaeSanta.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId}
+	getDirReq := pb.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId}
 	getDirStatus, err := server.GetDirectory(ctx, &getDirReq)
 	if err != nil {
 		if err.Error() != "mongo: no documents in result" {
@@ -76,19 +77,19 @@ func TestRemoveDirectory(t *testing.T) {
 
 /*
 func TestPhysicalRemoveDirectory(t *testing.T) {
-	var addFileStatus *MaeSanta.AddFileStatus
+	var addFileStatus *pb.AddFileStatus
 	var err error
-	var request MaeSanta.RemoveDirectoryRequest
-	var file MaeSanta.FileApproxMetadata
+	var request pb.RemoveDirectoryRequest
+	var file pb.FileApproxMetadata
 	var fileSize uint64 // zero value
 
 	for i := 0; i <= 10; i++ {
-		file = MaeSanta.FileApproxMetadata{
+		file = pb.FileApproxMetadata{
 			DirPath: "/",
 			Name:    getUniqueName(),
 			UserId:  userId}
 
-		addFileRequest := MaeSanta.AddFileRequest{
+		addFileRequest := pb.AddFileRequest{
 			File:     &file,
 			FileSize: fileSize}
 		addFileStatus, err = server.AddFile(ctx, &addFileRequest)
@@ -101,7 +102,7 @@ func TestPhysicalRemoveDirectory(t *testing.T) {
 		request.FileIds = append(request.FileIds, addFileStatus.FileId)
 	}
 
-	// request := MaeSanta.RemoveDirectoryRequest{FileIds: addFileStatuses}
+	// request := pb.RemoveDirectoryRequest{FileIds: addFileStatuses}
 	_, err = server.VirtualRemoveDirectory(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -114,7 +115,7 @@ func TestPhysicalRemoveDirectory(t *testing.T) {
 	// todo do getFile procedure
 	// todo use the server to query into the database and check if the file has the 'removed' field set
 	// 		cause this test is useless as it is same as previous with both VirtualRemoveDirectory
-	getDirRequest := MaeSanta.GetDirectoryRequest{
+	getDirRequest := pbrectoryRequest{
 		DirId: &primitive.NilObjectID.Hex(), UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
 	if err != nil {

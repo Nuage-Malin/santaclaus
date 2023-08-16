@@ -1,8 +1,9 @@
 package main
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -13,15 +14,15 @@ import (
 func TestMoveDirectoryLocation(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir [2]MaeSanta.FileApproxMetadata
-	dir[0] = MaeSanta.FileApproxMetadata{
+	var dir [2]pb.FileApproxMetadata
+	dir[0] = pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 
-	createDirReq := MaeSanta.AddDirectoryRequest{Directory: &dir[0]}
+	createDirReq := pb.AddDirectoryRequest{Directory: &dir[0]}
 
-	var createDirStatus [2]*MaeSanta.AddDirectoryStatus
+	var createDirStatus [2]*pb.AddDirectoryStatus
 	var err error
 	createDirStatus[0], err = server.AddDirectory(ctx, &createDirReq)
 	if err != nil {
@@ -31,11 +32,11 @@ func TestMoveDirectoryLocation(t *testing.T) {
 		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
 	}
 
-	dir[1] = MaeSanta.FileApproxMetadata{
+	dir[1] = pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	createDirReq = MaeSanta.AddDirectoryRequest{Directory: &dir[1]}
+	createDirReq = pb.AddDirectoryRequest{Directory: &dir[1]}
 
 	createDirStatus[1], err = server.AddDirectory(ctx, &createDirReq)
 	if err != nil {
@@ -45,7 +46,7 @@ func TestMoveDirectoryLocation(t *testing.T) {
 		t.Fatalf("Could not create directory %s : DirId is empty", dir[1].Name) // log and fail
 	}
 
-	request := MaeSanta.MoveDirectoryRequest{
+	request := pb.MoveDirectoryRequest{
 		DirId:            createDirStatus[0].DirId,
 		Name:             &dir[0].Name,
 		NewLocationDirId: &createDirStatus[1].DirId}
@@ -54,7 +55,7 @@ func TestMoveDirectoryLocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	getDirReq := MaeSanta.GetDirectoryRequest{DirId: request.NewLocationDirId, UserId: userId, IsRecursive: false}
+	getDirReq := pb.GetDirectoryRequest{DirId: request.NewLocationDirId, UserId: userId, IsRecursive: false}
 	index, err := server.GetDirectory(ctx, &getDirReq)
 	if err != nil {
 		t.Fatal(err)
@@ -71,12 +72,12 @@ func TestMoveDirectoryLocation(t *testing.T) {
 func TestMoveDirectoryName(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir MaeSanta.FileApproxMetadata
-	dir = MaeSanta.FileApproxMetadata{
+	var dir pb.FileApproxMetadata
+	dir = pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	createDirReq := MaeSanta.AddDirectoryRequest{Directory: &dir}
+	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
 	createDirStatus, err := server.AddDirectory(ctx, &createDirReq)
 	if err != nil {
@@ -87,7 +88,7 @@ func TestMoveDirectoryName(t *testing.T) {
 	}
 
 	moveDirName := getUniqueName()
-	request := MaeSanta.MoveDirectoryRequest{
+	request := pb.MoveDirectoryRequest{
 		DirId:            createDirStatus.DirId,
 		Name:             &moveDirName,
 		NewLocationDirId: &createDirStatus.DirId}
@@ -96,7 +97,7 @@ func TestMoveDirectoryName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	getDirReq := MaeSanta.GetDirectoryRequest{DirId: &request.DirId, UserId: userId, IsRecursive: false}
+	getDirReq := pb.GetDirectoryRequest{DirId: &request.DirId, UserId: userId, IsRecursive: false}
 	index, err := server.GetDirectory(ctx, &getDirReq)
 	if err != nil {
 		t.Fatal(err)
@@ -113,14 +114,14 @@ func TestMoveDirectoryName(t *testing.T) {
 func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir MaeSanta.FileApproxMetadata
-	dir = MaeSanta.FileApproxMetadata{
+	var dir pb.FileApproxMetadata
+	dir = pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	createDirReq := MaeSanta.AddDirectoryRequest{Directory: &dir}
+	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
-	var createDirStatus *MaeSanta.AddDirectoryStatus
+	var createDirStatus *pb.AddDirectoryStatus
 	var err error
 	createDirStatus, err = server.AddDirectory(ctx, &createDirReq)
 	if err != nil {
@@ -131,7 +132,7 @@ func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 	}
 
 	newLocationDirId := primitive.NewObjectID().Hex()
-	request := MaeSanta.MoveDirectoryRequest{
+	request := pb.MoveDirectoryRequest{
 		DirId:            createDirStatus.DirId,
 		Name:             &dir.Name,
 		NewLocationDirId: &newLocationDirId}
@@ -148,15 +149,15 @@ func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 func TestMoveDirSameName(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir [2]MaeSanta.FileApproxMetadata
-	var createDirReq [2]MaeSanta.AddDirectoryRequest
-	var createDirStatus [2]*MaeSanta.AddDirectoryStatus
+	var dir [2]pb.FileApproxMetadata
+	var createDirReq [2]pb.AddDirectoryRequest
+	var createDirStatus [2]*pb.AddDirectoryStatus
 	var err error
-	dir[0] = MaeSanta.FileApproxMetadata{
+	dir[0] = pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	createDirReq[0] = MaeSanta.AddDirectoryRequest{Directory: &dir[0]}
+	createDirReq[0] = pb.AddDirectoryRequest{Directory: &dir[0]}
 	createDirStatus[0], err = server.AddDirectory(ctx, &createDirReq[0])
 
 	if err != nil {
@@ -165,11 +166,11 @@ func TestMoveDirSameName(t *testing.T) {
 	if createDirStatus[0].DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
 	}
-	dir[1] = MaeSanta.FileApproxMetadata{
+	dir[1] = pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
-	createDirReq[1] = MaeSanta.AddDirectoryRequest{Directory: &dir[1]}
+	createDirReq[1] = pb.AddDirectoryRequest{Directory: &dir[1]}
 
 	createDirStatus[1], err = server.AddDirectory(ctx, &createDirReq[1])
 	if err != nil {
@@ -179,7 +180,7 @@ func TestMoveDirSameName(t *testing.T) {
 		t.Fatalf("Could not create directory %s : DirId is empty", dir[1].Name) // log and fail
 	}
 
-	request := MaeSanta.MoveDirectoryRequest{
+	request := pb.MoveDirectoryRequest{
 		DirId:            createDirStatus[0].DirId,
 		Name:             &createDirReq[1].Directory.Name,
 		NewLocationDirId: &createDirStatus[0].DirId}

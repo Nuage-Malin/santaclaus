@@ -1,7 +1,7 @@
 package main
 
 import (
-	context "context"
+	"context"
 	"log"
 	"os"
 	"time"

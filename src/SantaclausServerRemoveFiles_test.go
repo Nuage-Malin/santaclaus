@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"testing"
 	"time"
 )
@@ -14,19 +15,19 @@ import (
 func TestVirtualRemoveFiles(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var addFileStatus *MaeSanta.AddFileStatus
+	var addFileStatus *pb.AddFileStatus
 	var err error
-	var request MaeSanta.RemoveFilesRequest
-	var file MaeSanta.FileApproxMetadata
+	var request pb.RemoveFilesRequest
+	var file pb.FileApproxMetadata
 	var fileSize uint64 // zero value
 
 	for i := 0; i <= 10; i++ {
-		file = MaeSanta.FileApproxMetadata{
+		file = pb.FileApproxMetadata{
 			DirPath: "/",
 			Name:    getUniqueName(),
 			UserId:  userId}
 
-		addFileRequest := MaeSanta.AddFileRequest{
+		addFileRequest := pb.AddFileRequest{
 			File:     &file,
 			FileSize: fileSize}
 		addFileStatus, err = server.AddFile(ctx, &addFileRequest)
@@ -39,14 +40,14 @@ func TestVirtualRemoveFiles(t *testing.T) {
 		request.FileIds = append(request.FileIds, addFileStatus.FileId)
 	}
 
-	// request := MaeSanta.RemoveFilesRequest{FileIds: addFileStatuses}
+	// request := pb.RemoveFilesRequest{FileIds: addFileStatuses}
 	_, err = server.VirtualRemoveFiles(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure
 	// todo maybe use the server to query into the database and check if the file has the 'removed' field set
-	getDirRequest := MaeSanta.GetDirectoryRequest{
+	getDirRequest := pb.GetDirectoryRequest{
 		DirId: nil, UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
 	if err != nil {
@@ -64,19 +65,19 @@ func TestVirtualRemoveFiles(t *testing.T) {
 func TestPhysicalRemoveFiles(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var addFileStatus *MaeSanta.AddFileStatus
+	var addFileStatus *pb.AddFileStatus
 	var err error
-	var request MaeSanta.RemoveFilesRequest
-	var file MaeSanta.FileApproxMetadata
+	var request pb.RemoveFilesRequest
+	var file pb.FileApproxMetadata
 	var fileSize uint64 // zero value
 
 	for i := 0; i <= 10; i++ {
-		file = MaeSanta.FileApproxMetadata{
+		file = pb.FileApproxMetadata{
 			DirPath: "/",
 			Name:    getUniqueName(),
 			UserId:  userId}
 
-		addFileRequest := MaeSanta.AddFileRequest{
+		addFileRequest := pb.AddFileRequest{
 			File:     &file,
 			FileSize: fileSize}
 		addFileStatus, err = server.AddFile(ctx, &addFileRequest)
@@ -89,7 +90,7 @@ func TestPhysicalRemoveFiles(t *testing.T) {
 		request.FileIds = append(request.FileIds, addFileStatus.FileId)
 	}
 
-	// request := MaeSanta.RemoveFilesRequest{FileIds: addFileStatuses}
+	// request := pb.RemoveFilesRequest{FileIds: addFileStatuses}
 	_, err = server.VirtualRemoveFiles(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -102,7 +103,7 @@ func TestPhysicalRemoveFiles(t *testing.T) {
 	// todo do getFile procedure
 	// todo use the server to query into the database and check if the file has the 'removed' field set
 	// 		cause this test is useless as it is same as previous with both VirtualRemoveFiles
-	getDirRequest := MaeSanta.GetDirectoryRequest{
+	getDirRequest := pb.GetDirectoryRequest{
 		DirId: nil, UserId: userId, IsRecursive: true}
 	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
 	if err != nil {

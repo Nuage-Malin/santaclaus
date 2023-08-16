@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"testing"
 	"time"
 
@@ -16,13 +17,13 @@ import (
 func TestAddFile(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64 = 1
 
-	request := MaeSanta.AddFileRequest{
+	request := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	status, err := server.AddFile(ctx, &request)
@@ -37,13 +38,13 @@ func TestAddFile(t *testing.T) {
 func TestAddFileSameUser(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64 = 1
 
-	request := MaeSanta.AddFileRequest{
+	request := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	status, err := server.AddFile(ctx, &request)

@@ -1,8 +1,9 @@
 package main
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -14,7 +15,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.AddFileRequest) (status *MaeSanta.AddFileStatus, r error) {
+func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFileRequest) (status *pb.AddFileStatus, r error) {
 	userId, err := primitive.ObjectIDFromHex(req.File.UserId)
 
 	if err != nil {
@@ -56,14 +57,14 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 		// TODO check
 	}
 
-	status = &MaeSanta.AddFileStatus{
+	status = &pb.AddFileStatus{
 		FileId: newFileId.Hex(),
 		DiskId: newFile.DiskId.Hex()}
 
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *MaeSanta.RemoveFileRequest) (status *MaeSanta.RemoveFileStatus, r error) {
+func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if err != nil {
@@ -85,11 +86,11 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 	// if res.UpsertedCount != 1 {
 	// return nil, fmt.Errorf("Could not upsert file %s\n", fileId)
 	// }
-	status = &MaeSanta.RemoveFileStatus{}
+	status = &pb.RemoveFileStatus{}
 	return status, r
 }
 
-func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req *MaeSanta.RemoveFilesRequest) (status *MaeSanta.RemoveFilesStatus, r error) {
+func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
 	var fileId primitive.ObjectID
 	var tmpErr error
 	var filter bson.D
@@ -122,26 +123,26 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 	return status, r
 }
 
-func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *MaeSanta.RemoveFileRequest) (status *MaeSanta.RemoveFileStatus, r error) {
+func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if err != nil {
 		return status, err
 	}
 	filter := bson.D{{"_id", fileId}}
-	// TODO find out more about contexts !!
 	res, r := server.mongoColls[FilesCollName].DeleteOne(ctx, filter)
+
 	if r != nil {
 		return nil, r
 	}
 	if res.DeletedCount != 1 {
 		return nil, fmt.Errorf("Deleted %d instead of 1", res.DeletedCount)
 	}
-	status = &MaeSanta.RemoveFileStatus{}
+	status = &pb.RemoveFileStatus{}
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req *MaeSanta.RemoveFilesRequest) (status *MaeSanta.RemoveFilesStatus, r error) {
+func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
 	var fileId primitive.ObjectID
 	var tmpErr error
 	var filter bson.D
@@ -169,15 +170,15 @@ func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req
 	return status, r
 }
 
-func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *MaeSanta.MoveFileRequest) (status *MaeSanta.MoveFileStatus, r error) {
+func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFileRequest) (status *pb.MoveFileStatus, r error) {
 
 	// todo if nil object id for dirId, move to root dir ?
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
-	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
 	if r != nil {
 		return status, r
 	}
+	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
 	if r != nil {
 		return nil, r
@@ -206,12 +207,12 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *MaeSanta.
 		return nil, errors.New("Could not modify file to be updated")
 	}
 
-	status = &MaeSanta.MoveFileStatus{}
+	status = &pb.MoveFileStatus{}
 
 	return status, r
 }
 
-func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *MaeSanta.GetFileRequest) (*MaeSanta.GetFileStatus, error) {
+func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileStatus, error) {
 	var fileFound file
 	fileId, err := primitive.ObjectIDFromHex(req.FileId)
 
@@ -224,8 +225,8 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *MaeSanta.G
 		return nil, err
 	}
 
-	/* status := &MaeSanta.GetFileStatus{
-	File: &MaeSanta.FileApproxMetadata{
+	/* status := &pb.GetFileStatus{
+	File: &pb.FileApproxMetadata{
 		Name:    fileFound.Name,
 		DirPath: server.findPathFromDir(fileFound.DirId),
 		UserId:  fileFound.UserId.Hex()},
@@ -235,9 +236,9 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *MaeSanta.G
 	if err != nil {
 		return nil, err
 	}
-	status := &MaeSanta.GetFileStatus{
-		File: &MaeSanta.FileMetadata{
-			ApproxMetadata: &MaeSanta.FileApproxMetadata{
+	status := &pb.GetFileStatus{
+		File: &pb.FileMetadata{
+			ApproxMetadata: &pb.FileApproxMetadata{
 				Name:    fileFound.Name,
 				DirPath: dirPath,
 				UserId:  fileFound.UserId.Hex()},
@@ -256,7 +257,7 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *MaeSanta.G
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *MaeSanta.UpdateFileSuccessRequest) (status *MaeSanta.UpdateFileSuccessStatus, r error) {
+func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *pb.UpdateFileSuccessRequest) (status *pb.UpdateFileSuccessStatus, r error) {
 	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if err != nil {
@@ -282,7 +283,7 @@ func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *
 	return status, r
 }
 
-func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *MaeSanta.ChangeFileDiskRequest) (status *MaeSanta.ChangeFileDiskStatus, r error) {
+func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.ChangeFileDiskRequest) (status *pb.ChangeFileDiskStatus, r error) {
 
 	filter := bson.D{primitive.E{Key: "_id", Value: req.GetFileId()}}
 	// find the file in order not to put it on the same disk as it is already
@@ -304,7 +305,7 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *Mae
 }
 
 // Directories
-func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *MaeSanta.AddDirectoryRequest) (status *MaeSanta.AddDirectoryStatus, r error) {
+func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.AddDirectoryRequest) (status *pb.AddDirectoryStatus, r error) {
 	// find parent ID from req.Directory.DirPath
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
 
@@ -320,11 +321,11 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *MaeSa
 	if r != nil {
 		return nil, r
 	}
-	status = &MaeSanta.AddDirectoryStatus{DirId: dir.Id.Hex()}
+	status = &pb.AddDirectoryStatus{DirId: dir.Id.Hex()}
 	return status, r
 }
 
-func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirId *primitive.ObjectID, status *MaeSanta.RemoveDirectoryStatus) (r error) {
+func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirId *primitive.ObjectID, status *pb.RemoveDirectoryStatus) (r error) {
 	var files []file
 	filter := bson.D{{"_id", dirId}}
 	update := bson.D{{"$set", bson.D{{"deleted", true}}}}
@@ -362,7 +363,7 @@ func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirI
 /**
  * recursivelly remove directories from directory
  */
-func (server *SantaclausServerImpl) removeSubDirectories(ctx context.Context, parentId *primitive.ObjectID, status *MaeSanta.RemoveDirectoryStatus) (r error) {
+func (server *SantaclausServerImpl) removeSubDirectories(ctx context.Context, parentId *primitive.ObjectID, status *pb.RemoveDirectoryStatus) (r error) {
 	var dirs []directory
 	filter := bson.D{{"parent_id", parentId}}
 	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
@@ -381,7 +382,7 @@ func (server *SantaclausServerImpl) removeSubDirectories(ctx context.Context, pa
 	return nil
 }
 
-func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *MaeSanta.RemoveDirectoryRequest) (status *MaeSanta.RemoveDirectoryStatus, r error) {
+func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb.RemoveDirectoryRequest) (status *pb.RemoveDirectoryStatus, r error) {
 	//	find all subdirectories recursively
 	//	in each subdirectory, add fileIds to the status (fileIdsToRemove)
 	//	set directories as deleted
@@ -390,7 +391,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *Ma
 	if err != nil {
 		return status, err
 	}
-	status = &MaeSanta.RemoveDirectoryStatus{FileIdsToRemove: make([]string, 0)}
+	status = &pb.RemoveDirectoryStatus{FileIdsToRemove: make([]string, 0)}
 	r = server.removeSubDirectories(ctx, &dirId, status)
 	if r != nil {
 		return status, r
@@ -399,7 +400,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *Ma
 	return status, r
 }
 
-func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeSanta.MoveDirectoryRequest) (status *MaeSanta.MoveDirectoryStatus, r error) {
+func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.MoveDirectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
 	// todo if nil object id for dirId, move to root dir ?
 	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
@@ -478,6 +479,6 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeS
 		// log.Print(res.ModifiedCount)
 		return nil, errors.New("Could not modify file to be updated")
 	}
-	status = &MaeSanta.MoveDirectoryStatus{}
+	status = &pb.MoveDirectoryStatus{}
 	return status, r
 }

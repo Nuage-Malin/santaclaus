@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"testing"
 	"time"
 
@@ -16,13 +17,13 @@ import (
 func TestUpdateFileSuccess(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	file := MaeSanta.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		DirPath: "/",
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64
 
-	addFileRequest := MaeSanta.AddFileRequest{
+	addFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
 	addFileStatus, err := server.AddFile(ctx, &addFileRequest)
@@ -33,7 +34,7 @@ func TestUpdateFileSuccess(t *testing.T) {
 		t.Fatalf("DiskId or FileId is empty")
 	}
 	fileSize = 10
-	request := MaeSanta.UpdateFileSuccessRequest{
+	request := pb.UpdateFileSuccessRequest{
 		FileId:      addFileStatus.FileId,
 		NewFileSize: fileSize}
 	_, err = server.UpdateFileSuccess(ctx, &request)

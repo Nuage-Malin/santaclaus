@@ -1,7 +1,8 @@
 package main
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -12,7 +13,7 @@ type SantaclausServerImpl struct { // implements Maestro_Santaclaus_ServiceClien
 	mongoClient *mongo.Client
 	mongoDb     *mongo.Database
 	mongoColls  map[string]*mongo.Collection
-	MaeSanta.UnimplementedMaestro_Santaclaus_ServiceServer
+	pb.UnimplementedMaestro_Santaclaus_ServiceServer
 }
 
 // Names of collections, stored in SantaclausServerImpl.mongoColls

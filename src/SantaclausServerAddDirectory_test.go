@@ -3,8 +3,9 @@ package main
 // todo put this file in different directory
 
 import (
-	MaeSanta "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
-	context "context"
+	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
+
+	"context"
 	"path/filepath"
 	"time"
 
@@ -20,11 +21,11 @@ var directoryNames [4]string = [4]string{"/", getUniqueName(), getUniqueName(), 
 func TestCreateDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	dir := MaeSanta.FileApproxMetadata{
+	dir := pb.FileApproxMetadata{
 		DirPath: directoryNames[0],
 		Name:    directoryNames[1],
 		UserId:  userId}
-	var request = MaeSanta.AddDirectoryRequest{Directory: &dir}
+	var request = pb.AddDirectoryRequest{Directory: &dir}
 
 	status, err := server.AddDirectory(ctx, &request)
 	if err != nil {
@@ -41,11 +42,11 @@ func TestCreateDirectory(t *testing.T) {
 func TestCreateSubDirectoryTwice(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	dir := MaeSanta.FileApproxMetadata{
+	dir := pb.FileApproxMetadata{
 		DirPath: filepath.Join(directoryNames[0], directoryNames[1]),
 		Name:    directoryNames[2],
 		UserId:  userId}
-	var request = MaeSanta.AddDirectoryRequest{Directory: &dir}
+	var request = pb.AddDirectoryRequest{Directory: &dir}
 	var dirId string
 
 	status, err := server.AddDirectory(ctx, &request)
@@ -68,11 +69,11 @@ func TestCreateSubDirectoryTwice(t *testing.T) {
 func TestCreateSubDirectorySameSubName(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	dir := MaeSanta.FileApproxMetadata{
+	dir := pb.FileApproxMetadata{
 		DirPath: filepath.Join(directoryNames[0], directoryNames[1], directoryNames[2]),
 		Name:    directoryNames[3],
 		UserId:  userId}
-	var request = MaeSanta.AddDirectoryRequest{Directory: &dir}
+	var request = pb.AddDirectoryRequest{Directory: &dir}
 
 	status, err := server.AddDirectory(ctx, &request)
 	if err != nil {

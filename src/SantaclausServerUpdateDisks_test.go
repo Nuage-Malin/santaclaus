@@ -3,7 +3,7 @@ package main
 // todo put this file in different directory
 
 import (
-	context "context"
+	"context"
 	"testing"
 	"time"
 )
@@ -16,8 +16,7 @@ func TestUpdateDisks(t *testing.T) {
 
 	r := server.updateDiskBase(ctx)
 
-	if r != nil {
-		t.Fatal(r)
+	if r == nil { // updateDiskBase fails because Bugle is not conected
+		t.Fatalf("updateDiskBase should not work if Bugle is not launched")
 	}
-
 }
