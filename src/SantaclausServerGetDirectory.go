@@ -54,8 +54,8 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 			FileId:         file.Id.Hex(),
 			IsDownloadable: false,             /* TODO change by real stored field */
 			LastEditorId:   file.UserId.Hex(), /* TODO ? */
-			Creation:       &timestamppb.Timestamp{Seconds: 0 /* TODO file.CreatedAt */},
-			LastEdit:       &timestamppb.Timestamp{Seconds: 0 /* TODO file.EditedAt */}}
+			Creation:       &timestamppb.Timestamp{Seconds: file.CreatedAt.Unix() },
+			LastEdit:       &timestamppb.Timestamp{Seconds: file.EditedAt.Unix() }}
 		status.SubFiles.FileIndex = append(status.SubFiles.FileIndex, metadata)
 	}
 	return status, nil
