@@ -26,7 +26,11 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 		return status, err
 	}
 	for _, dir := range dirs {
-		status, err = server.getOneDirectory(ctx, dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)
+		if recursive {
+			status, err = server.getOneDirectory(ctx, dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)
+		} else {
+			status, err = server.addOneDirectoryToIndex(ctx, dir.Id, status)
+		}
 		if err != nil {
 			return status, err
 		}
@@ -54,8 +58,8 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 			FileId:         file.Id.Hex(),
 			IsDownloadable: false,             /* TODO change by real stored field */
 			LastEditorId:   file.UserId.Hex(), /* TODO ? */
-			Creation:       &timestamppb.Timestamp{Seconds: file.CreatedAt.Unix() },
-			LastEdit:       &timestamppb.Timestamp{Seconds: file.EditedAt.Unix() }}
+			Creation:       &timestamppb.Timestamp{Seconds: file.CreatedAt.Unix()},
+			LastEdit:       &timestamppb.Timestamp{Seconds: file.EditedAt.Unix()}}
 		status.SubFiles.FileIndex = append(status.SubFiles.FileIndex, metadata)
 	}
 	return status, nil
@@ -99,9 +103,7 @@ func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId p
 	if err != nil {
 		return status, err
 	}
-	if recursive {
-		status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath, status)
-	}
+	status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath, status)
 	// print(err)
 	return status, err
 }
@@ -115,6 +117,9 @@ func (server *SantaclausServerImpl) GetRootDirectory(ctx context.Context, recurs
 	return server.getOneDirectory(ctx, rootDir.Id, recursive, "/", status)
 }
 
+/*
+ * If dirId is nil, return root directory
+ */
 func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *MaeSanta.GetDirectoryRequest) (status *MaeSanta.GetDirectoryStatus, r error) {
 	println("Requets: GetDirectory")
 	userId, r := primitive.ObjectIDFromHex(req.UserId)
