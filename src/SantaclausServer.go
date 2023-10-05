@@ -482,3 +482,52 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 	status = &pb.MoveDirectoryStatus{}
 	return status, r
 }
+
+func (server *SantaclausServerImpl) VirtualRemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveDirectoryStatus, r error) {
+	userId, r := primitive.ObjectIDFromHex(req.UserId)
+
+	// directories
+	filter := bson.D{{"user_id", userId}}
+	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
+	var dirs []directory
+
+	// todo actually remove directories from database at some point
+
+	if r != nil {
+		return status, r
+	}
+	r = findRes.All(ctx, &dirs)
+	if r != nil {
+		return status, r
+	}
+	var filesToRemove pb.RemoveFilesRequest
+	// var removeDirStatus pb.RemoveDirectoryStatus
+	for _, dir := range dirs {
+		removeDirStatus, r := server.RemoveDirectory(ctx, &pb.RemoveDirectoryRequest{DirId: dir.Id.String() /* todo use other method to convert to string ? */})
+		if r != nil {
+			log.Print(r)
+		}
+		for _, fileId := range removeDirStatus.FileIdsToRemove {
+			filesToRemove.FileIds = append(filesToRemove.FileIds, fileId)
+		}
+	}
+	//
+	// files
+	server.VirtualRemoveFiles(ctx, &filesToRemove)
+	//
+	return status, r
+}
+
+func (server *SantaclausServerImpl) PhysicalRemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveUserStatus, r error) {
+	userId, r := primitive.ObjectIDFromHex(req.UserId)
+	filter := bson.D{{"user_id", userId}}
+
+	_, r = server.mongoColls[FilesCollName].DeleteMany(ctx, filter)
+
+	if r != nil {
+		return status, r
+	}
+	// todo physical remove directory
+
+	return status, r
+}
