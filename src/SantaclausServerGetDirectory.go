@@ -28,7 +28,7 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 	}
 	for _, dir := range dirs {
 		if recursive {
-			status, err = server.getOneDirectory(ctx, dir.Id, recursive, filepath.Join(dirPath, dir.Name), status)
+			status, err = server.getOneDirectory(ctx, dir.Id, recursive, filepath.Join(dirPath /* todo remove dirPath as it is useless */, dir.Name), status)
 		} else {
 			status, err = server.addOneDirectoryToIndex(ctx, dir.Id, status)
 		}
@@ -39,7 +39,7 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId primitive.ObjectID, dirPath string, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId primitive.ObjectID, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
 	var files []file
 	filter := bson.D{{"dir_id", dirId}, {"deleted", false}} // get all files if not deleted
 	cur, err := server.mongoColls[FilesCollName].Find(ctx, filter)
@@ -55,7 +55,7 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 
 	for _, file := range files {
 		metadata := &pb.FileMetadata{
-			ApproxMetadata: &pb.FileApproxMetadata{Name: file.Name, DirPath: dirPath, UserId: file.UserId.Hex()},
+			ApproxMetadata: &pb.FileApproxMetadata{Name: file.Name, DirId: dirId.Hex(), UserId: file.UserId.Hex()},
 			FileId:         file.Id.Hex(),
 			IsDownloadable: false,             /* TODO change by real stored field */
 			LastEditorId:   file.UserId.Hex(), /* TODO ? */
@@ -74,17 +74,12 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, 
 	if err != nil {
 		return status, err
 	}
-	dirPath, err := server.findPathFromDir(ctx, dir.Id)
-	if err != nil {
-		return nil, err
-	}
-	dirPath = filepath.Dir(dirPath)
 	status.SubFiles.DirIndex = append(status.SubFiles.DirIndex,
 		&pb.DirMetadata{
 			ApproxMetadata: &pb.FileApproxMetadata{
-				Name:    dir.Name,
-				DirPath: dirPath,
-				UserId:  dir.UserId.Hex(),
+				Name:   dir.Name,
+				DirId:  dir.Id.Hex(),
+				UserId: dir.UserId.Hex(),
 			},
 			DirId: dir.Id.Hex()})
 	return status, nil
@@ -100,11 +95,11 @@ func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId p
 	if err != nil {
 		return status, err
 	}
-	status, err = server.addFilesToIndex(ctx, dirId, dirPath, status)
+	status, err = server.addFilesToIndex(ctx, dirId, status)
 	if err != nil {
 		return status, err
 	}
-	status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath, status)
+	status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath /* todo remove dirPath as it is useless */, status)
 	// print(err)
 	return status, err
 }

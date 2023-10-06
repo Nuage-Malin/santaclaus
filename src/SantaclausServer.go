@@ -21,7 +21,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 	if err != nil {
 		return status, err
 	}
-	foundDirectory, err := server.findDirFromPath(ctx, req.File.DirPath, userId) // todo replace path with dir Id
+	dirId, err := primitive.ObjectIDFromHex(req.File.DirId)
 	if err != nil {
 		return status, err
 		// TODO do something
@@ -37,7 +37,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 	newFile := file{
 		Id:         primitive.NewObjectID(),
 		Name:       req.File.Name,
-		DirId:      foundDirectory.Id, // TODO find dirId from dirpath
+		DirId:      dirId, // TODO find dirId from dirpath
 		UserId:     userId,
 		Size:       req.FileSize,
 		DiskId:     foundDisk,
@@ -232,16 +232,12 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 		UserId:  fileFound.UserId.Hex()},
 	DiskId: fileFound.DiskId.Hex()} */
 
-	dirPath, err := server.findPathFromDir(ctx, fileFound.DirId)
-	if err != nil {
-		return nil, err
-	}
 	status := &pb.GetFileStatus{
 		File: &pb.FileMetadata{
 			ApproxMetadata: &pb.FileApproxMetadata{
-				Name:    fileFound.Name,
-				DirPath: dirPath,
-				UserId:  fileFound.UserId.Hex()},
+				Name:   fileFound.Name,
+				DirId:  fileFound.DirId.Hex(),
+				UserId: fileFound.UserId.Hex()},
 			FileId:         fileFound.Id.Hex(),
 			DirId:          fileFound.DirId.Hex(),
 			IsDownloadable: fileFound.Downloadable,
@@ -312,12 +308,12 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 	if err != nil {
 		return nil, err
 	}
-	parentDir, err := server.findDirFromPath(ctx, req.Directory.DirPath, userId)
+	dirId, err := primitive.ObjectIDFromHex(req.Directory.DirId)
 	if err != nil {
 		// TODO check error in another way than that
 		return nil, err
 	}
-	dir, r := server.createDir(ctx, userId, parentDir.Id, req.Directory.Name)
+	dir, r := server.createDir(ctx, userId, dirId, req.Directory.Name)
 	if r != nil {
 		return nil, r
 	}
