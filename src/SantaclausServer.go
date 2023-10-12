@@ -25,8 +25,6 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 		return status, err
 	}
 
-	// TODO find diskId
-
 	foundDisk, r := server.findAvailableDisk(ctx, req.FileSize, req.File.UserId)
 	// todo update disk size here ? or in other function ?
 	if r != nil {
