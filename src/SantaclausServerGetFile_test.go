@@ -16,9 +16,9 @@ func TestGetFile(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	file := pb.FileApproxMetadata{
-		DirPath: "/",
-		Name:    getUniqueName(),
-		UserId:  userId}
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
 	var fileSize uint64
 
 	createFileRequest := pb.AddFileRequest{
@@ -38,18 +38,13 @@ func TestGetFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.File.ApproxMetadata.DirPath != file.DirPath || status.File.ApproxMetadata.Name != file.Name || status.File.ApproxMetadata.UserId != file.UserId { // check approx metadata
+	if status.File.ApproxMetadata.DirId != file.DirId || status.File.ApproxMetadata.Name != file.Name || status.File.ApproxMetadata.UserId != file.UserId { // check approx metadata
 		t.Fatalf("Metadata about file retrieved is different from added one")
 	}
 	if status.File.FileId != createFileStatus.FileId || status.DiskId != createFileStatus.DiskId {
 		t.Fatalf("Ids inserted and retrieved don't match :\nfileId inserted : %s\tfileId retrieved : %s\ndiskId inserted : %s\tdiskId retrieved %s\n", createFileStatus.FileId, status.File.FileId, createFileStatus.DiskId, status.DiskId)
 	}
-	userIdPrimitive, err := primitive.ObjectIDFromHex(userId)
-	dir, err := server.findDirFromPath(ctx, file.DirPath, userIdPrimitive)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if status.File.DirId != dir.Id.Hex() {
+	if status.File.DirId != file.DirId {
 		t.Fatalf("File retrieved is in different directory than the one inserted")
 	}
 	// todo check content of what I got
@@ -62,7 +57,7 @@ func TestGetFiles(t *testing.T) {
 
 	dir := pb.FileApproxMetadata{
 		Name:    getUniqueName(),
-		DirPath: "/",
+		DirId: primitive.NilObjectID.Hex(),
 		UserId:  userId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir}
 
@@ -74,7 +69,7 @@ func TestGetFiles(t *testing.T) {
 		t.Fatalf("DirId is empty") // log and fail
 	}
 	file := pb.FileApproxMetadata{
-		DirPath: "/",
+		DirId: primitive.NilObjectID.Hex(),
 		Name:    getUniqueName(),
 		UserId:  userId}
 	var fileSize uint64

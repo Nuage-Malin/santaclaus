@@ -4,7 +4,6 @@ import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,9 +15,9 @@ func TestMoveFileLocation(t *testing.T) {
 
 	var dir [2]pb.FileApproxMetadata
 	dir[0] = pb.FileApproxMetadata{
-		DirPath: "/",
-		Name:    getUniqueName(),
-		UserId:  userId}
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir[0]}
 
 	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
@@ -30,9 +29,9 @@ func TestMoveFileLocation(t *testing.T) {
 	}
 	var file pb.FileApproxMetadata
 	file = pb.FileApproxMetadata{
-		Name:    getUniqueName(),
-		DirPath: filepath.Join(dir[0].DirPath, dir[0].Name),
-		UserId:  userId}
+		Name:   getUniqueName(),
+		DirId:  createDirStatus.DirId,
+		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
 	if err != nil {
@@ -44,9 +43,9 @@ func TestMoveFileLocation(t *testing.T) {
 	}
 
 	dir[1] = pb.FileApproxMetadata{
-		DirPath: filepath.Join(dir[0].DirPath, dir[0].Name),
-		Name:    getUniqueName(),
-		UserId:  userId}
+		DirId:  createDirStatus.DirId,
+		Name:   getUniqueName(),
+		UserId: userId}
 	createDirrequest = pb.AddDirectoryRequest{Directory: &dir[1]}
 
 	secondCreateDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
@@ -71,8 +70,8 @@ func TestMoveFileLocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fileMoved.File.ApproxMetadata.DirPath != filepath.Join(dir[1].DirPath, dir[1].Name) {
-		t.Fatalf("File path has not been moved properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.DirPath, filepath.Join(dir[1].DirPath, dir[1].Name))
+	if fileMoved.File.ApproxMetadata.DirId != dir[1].DirId {
+		t.Fatalf("File path has not been moved properly, it is in %s, but should be in %s", fileMoved.File.ApproxMetadata.DirId, dir[1].DirId)
 	}
 	if fileMoved.File.ApproxMetadata.Name != createFileRequest.File.Name {
 		t.Fatalf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.Name, createFileRequest.File.Name)
@@ -84,9 +83,9 @@ func TestMoveFileName(t *testing.T) {
 
 	var dir pb.FileApproxMetadata
 	dir = pb.FileApproxMetadata{
-		DirPath: "/",
-		Name:    getUniqueName(),
-		UserId:  userId}
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir}
 
 	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
@@ -98,9 +97,9 @@ func TestMoveFileName(t *testing.T) {
 	}
 	var file pb.FileApproxMetadata
 	file = pb.FileApproxMetadata{
-		Name:    getUniqueName(),
-		DirPath: filepath.Join(dir.DirPath, dir.Name),
-		UserId:  userId}
+		Name:   getUniqueName(),
+		DirId:  dir.DirId,
+		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
 	if err != nil {
@@ -126,8 +125,8 @@ func TestMoveFileName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fileMoved.File.ApproxMetadata.DirPath != filepath.Join(dir.DirPath, dir.Name) {
-		t.Fatalf("File path has not been moved properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.DirPath, filepath.Join(dir.DirPath, dir.Name))
+	if fileMoved.File.ApproxMetadata.DirId != *request.DirId {
+		t.Fatalf("File path has not been moved properly, it is in %s, but should be in %s", fileMoved.File.ApproxMetadata.DirId, dir.DirId)
 	}
 	if fileMoved.File.ApproxMetadata.Name != *request.NewFileName {
 		t.Fatalf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.Name, createFileRequest.File.Name)
@@ -139,9 +138,9 @@ func TestMoveFileToFakeDirectory(t *testing.T) {
 
 	var file pb.FileApproxMetadata
 	file = pb.FileApproxMetadata{
-		Name:    getUniqueName(),
-		DirPath: "/",
-		UserId:  userId}
+		Name:   getUniqueName(),
+		DirId:  primitive.NilObjectID.Hex(),
+		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
 	if err != nil {

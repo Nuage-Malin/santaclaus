@@ -16,6 +16,7 @@ import (
 )
 
 func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFileRequest) (status *pb.AddFileStatus, r error) {
+	/* todo check if filename already exists */
 	userId, err := primitive.ObjectIDFromHex(req.File.UserId)
 
 	if err != nil {
@@ -305,6 +306,8 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 	// find parent ID from req.Directory.DirPath
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
 
+	/* todo check if dirId already exists */
+
 	if err != nil {
 		return nil, err
 	}
@@ -397,6 +400,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 }
 
 func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.MoveDirectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
+	// todo if nil object id for dirId, move to root dir ?rectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
 	// todo if nil object id for dirId, move to root dir ?
 	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
@@ -432,8 +436,10 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 	}
 
 	if newLocationDirId != primitive.NilObjectID && newLocationDirId != dirId {
+		// todo refactor this piece of code
+		// a lot of code could be removed cause it does the same thing twice
 		if req.Name != nil {
-			filter = bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}
+			filter = bson.D{{"name", *req.Name}, {"parent_id", newLocationDirId}}
 		} else {
 			filter = bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}
 		}
@@ -445,7 +451,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 			return nil, errors.New("Cannot store directory in its subdirectory")
 		}
 		if req.Name != nil {
-			update = bson.D{{"$set", bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}}}
+			update = bson.D{{"$set", bson.D{{"name", *req.Name}, {"parent_id", newLocationDirId}}}}
 		} else {
 			update = bson.D{{"$set", bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}}}
 		}
@@ -453,13 +459,13 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 		if req.Name == nil {
 			return nil, errors.New("No new name nor new location id provided for directory move")
 		}
-		filter = bson.D{{"name", req.Name}, {"parent_id", dir.ParentId}}
+		filter = bson.D{{"name", *req.Name}, {"parent_id", dir.ParentId}} // todo add * for every valid req.name ?
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r == nil {
 			return nil, errors.New("Directory name already exists in this directory, aborting move")
 		}
 		// In order not to change the location, but only the name, in the parameter, specify the same dirId as actual and new dir
-		update = bson.D{{"$set", bson.D{{"name", req.Name}}}}
+		update = bson.D{{"$set", bson.D{{"name", *req.Name}}}}
 	}
 
 	filter = bson.D{{"_id", dirId}}

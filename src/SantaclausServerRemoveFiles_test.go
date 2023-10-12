@@ -8,6 +8,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /* AddFile */
@@ -23,9 +25,9 @@ func TestVirtualRemoveFiles(t *testing.T) {
 
 	for i := 0; i <= 10; i++ {
 		file = pb.FileApproxMetadata{
-			DirPath: "/",
-			Name:    getUniqueName(),
-			UserId:  userId}
+			DirId:  primitive.NilObjectID.Hex(),
+			Name:   getUniqueName(),
+			UserId: userId}
 
 		addFileRequest := pb.AddFileRequest{
 			File:     &file,
@@ -73,9 +75,9 @@ func TestPhysicalRemoveFiles(t *testing.T) {
 
 	for i := 0; i <= 10; i++ {
 		file = pb.FileApproxMetadata{
-			DirPath: "/",
-			Name:    getUniqueName(),
-			UserId:  userId}
+			DirId:  primitive.NilObjectID.Hex(),
+			Name:   getUniqueName(),
+			UserId: userId}
 
 		addFileRequest := pb.AddFileRequest{
 			File:     &file,

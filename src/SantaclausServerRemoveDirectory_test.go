@@ -6,7 +6,6 @@ import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -26,9 +25,9 @@ func TestRemoveDirectory(t *testing.T) {
 
 	addDirReq := pb.AddDirectoryRequest{
 		Directory: &pb.FileApproxMetadata{
-			Name:    "directoryToBeRemoved",
-			DirPath: "/",
-			UserId:  userId,
+			Name:   "directoryToBeRemoved",
+			DirId:  primitive.NilObjectID.Hex(),
+			UserId: userId,
 		}}
 	addDirStatus, err := server.AddDirectory(ctx, &addDirReq)
 	if err != nil {
@@ -39,9 +38,9 @@ func TestRemoveDirectory(t *testing.T) {
 	}
 	for i := 0; i < nbFilesInDir; i++ { // todo an other test with recursive directory creation
 		file = pb.FileApproxMetadata{
-			DirPath: filepath.Join(addDirReq.Directory.DirPath, addDirReq.Directory.Name),
-			Name:    getUniqueName(),
-			UserId:  userId}
+			DirId:  addDirStatus.DirId,
+			Name:   getUniqueName(),
+			UserId: userId}
 
 		addFileRequest := pb.AddFileRequest{
 			File:     &file,
@@ -85,7 +84,7 @@ func TestPhysicalRemoveDirectory(t *testing.T) {
 
 	for i := 0; i <= 10; i++ {
 		file = pb.FileApproxMetadata{
-			DirPath: "/",
+			DirId: primitive.NilObjectID.Hex(),
 			Name:    getUniqueName(),
 			UserId:  userId}
 

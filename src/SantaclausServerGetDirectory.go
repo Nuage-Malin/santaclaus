@@ -4,14 +4,13 @@ import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 
 	"context"
-	"path/filepath"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, dirId primitive.ObjectID, recursive bool, dirPath string, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, dirId primitive.ObjectID, recursive bool, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
 	/* find all children directories thanks to a request with their parent ID (which is the current dirId) */
 
 	var dirs []directory
@@ -28,7 +27,7 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 	}
 	for _, dir := range dirs {
 		if recursive {
-			status, err = server.getOneDirectory(ctx, dir.Id, recursive, filepath.Join(dirPath /* todo remove dirPath as it is useless */, dir.Name), status)
+			status, err = server.getOneDirectory(ctx, dir.Id, recursive, status)
 		} else {
 			status, err = server.addOneDirectoryToIndex(ctx, dir.Id, status)
 		}
@@ -85,7 +84,7 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, 
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId primitive.ObjectID, recursive bool, dirPath string, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId primitive.ObjectID, recursive bool, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
 
 	// todo special case for root dir :
 	// if queried with nil dirId, queries root dir
@@ -99,7 +98,7 @@ func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId p
 	if err != nil {
 		return status, err
 	}
-	status, err = server.getChildrenDirectories(ctx, dirId, recursive, dirPath /* todo remove dirPath as it is useless */, status)
+	status, err = server.getChildrenDirectories(ctx, dirId, recursive, status)
 	// print(err)
 	return status, err
 }
@@ -110,7 +109,7 @@ func (server *SantaclausServerImpl) GetRootDirectory(ctx context.Context, recurs
 	if err != nil {
 		return nil, err
 	}
-	return server.getOneDirectory(ctx, rootDir.Id, recursive, "/", status)
+	return server.getOneDirectory(ctx, rootDir.Id, recursive, status)
 }
 
 /*
@@ -141,16 +140,7 @@ func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *pb.Ge
 	}
 	if dirId == primitive.NilObjectID { // todo does it actually ever branches through that ?
 		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
-	}
-
-	if dirId != primitive.NilObjectID {
-		dirPath, err := server.findPathFromDir(ctx, dirId)
-		if err != nil {
-			return nil, err
-		}
-
-		return server.getOneDirectory(ctx, dirId, req.IsRecursive, dirPath, status)
-	} else { // todo does it actually ever branches through that ?
-		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
+	} else {
+		return server.getOneDirectory(ctx, dirId, req.IsRecursive, status)
 	}
 }

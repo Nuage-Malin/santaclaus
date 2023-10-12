@@ -18,9 +18,9 @@ func TestUpdateFileSuccess(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	file := pb.FileApproxMetadata{
-		DirPath: "/",
-		Name:    getUniqueName(),
-		UserId:  userId}
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
 	var fileSize uint64
 
 	addFileRequest := pb.AddFileRequest{

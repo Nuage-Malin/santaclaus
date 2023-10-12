@@ -6,7 +6,6 @@ import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 
 	"context"
-	"path/filepath"
 	"time"
 
 	"testing"
@@ -16,15 +15,15 @@ import (
 
 /* AddDirectory */
 
-var directoryNames [4]string = [4]string{"/", getUniqueName(), getUniqueName(), getUniqueName()}
+var directoryIds [4]string = [4]string{primitive.NilObjectID.Hex(), primitive.NilObjectID.Hex(), primitive.NilObjectID.Hex(), primitive.NilObjectID.Hex()}
 
 func TestCreateDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	dir := pb.FileApproxMetadata{
-		DirPath: directoryNames[0],
-		Name:    directoryNames[1],
-		UserId:  userId}
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
 	var request = pb.AddDirectoryRequest{Directory: &dir}
 
 	status, err := server.AddDirectory(ctx, &request)
@@ -37,15 +36,16 @@ func TestCreateDirectory(t *testing.T) {
 	if status.DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("DirId is empty") // log and fail
 	}
+	directoryIds[1] = status.DirId
 }
 
 func TestCreateSubDirectoryTwice(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	dir := pb.FileApproxMetadata{
-		DirPath: filepath.Join(directoryNames[0], directoryNames[1]),
-		Name:    directoryNames[2],
-		UserId:  userId}
+		DirId:  directoryIds[1],
+		Name:   getUniqueName(),
+		UserId: userId}
 	var request = pb.AddDirectoryRequest{Directory: &dir}
 	var dirId string
 
@@ -53,10 +53,15 @@ func TestCreateSubDirectoryTwice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if status == nil {
+		t.Fatalf("Status is nil")
+	}
 	dirId = status.DirId
 	if dirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("DirId is empty") // log and fail
 	}
+	directoryIds[2] = dirId
+
 	status, err = server.AddDirectory(ctx, &request)
 	if err != nil {
 		t.Fatal(err) // log and fail
@@ -64,15 +69,16 @@ func TestCreateSubDirectoryTwice(t *testing.T) {
 	if dirId != status.DirId {
 		t.Fatalf("DirId is different from previously created same directory") // log and fail
 	}
+	directoryIds[3] = status.DirId
 }
 
 func TestCreateSubDirectorySameSubName(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	dir := pb.FileApproxMetadata{
-		DirPath: filepath.Join(directoryNames[0], directoryNames[1], directoryNames[2]),
-		Name:    directoryNames[3],
-		UserId:  userId}
+		DirId:  directoryIds[3],
+		Name:   getUniqueName(),
+		UserId: userId}
 	var request = pb.AddDirectoryRequest{Directory: &dir}
 
 	status, err := server.AddDirectory(ctx, &request)
