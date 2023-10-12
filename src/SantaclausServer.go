@@ -228,15 +228,11 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *MaeSanta.G
 		UserId:  fileFound.UserId.Hex()},
 	DiskId: fileFound.DiskId.Hex()} */
 
-	dirPath, err := server.findPathFromDir(ctx, fileFound.DirId)
-	if err != nil {
-		return nil, err
-	}
 	status := &MaeSanta.GetFileStatus{
 		File: &MaeSanta.FileMetadata{
 			ApproxMetadata: &MaeSanta.FileApproxMetadata{
 				Name:    fileFound.Name,
-				DirPath: dirPath,
+				DirId: 	 fileFound.DirId.Hex(),
 				UserId:  fileFound.UserId.Hex()},
 			FileId:         fileFound.Id.Hex(),
 			DirId:          fileFound.DirId.Hex(),
@@ -302,18 +298,17 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *Mae
 
 // Directories
 func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *MaeSanta.AddDirectoryRequest) (status *MaeSanta.AddDirectoryStatus, r error) {
-	// find parent ID from req.Directory.DirPath
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
+	if err != nil {
+		return nil, err
+	}
 
+	dirId, err := primitive.ObjectIDFromHex(req.Directory.DirId)
 	if err != nil {
 		return nil, err
 	}
-	parentDir, err := server.findDirFromPath(ctx, req.Directory.DirPath, userId)
-	if err != nil {
-		// TODO check error in another way than that
-		return nil, err
-	}
-	dir, r := server.createDir(ctx, userId, parentDir.Id, req.Directory.Name)
+
+	dir, r := server.createDir(ctx, userId, dirId, req.Directory.Name)
 	if r != nil {
 		return nil, r
 	}

@@ -38,7 +38,7 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId primitive.ObjectID, dirPath string, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
+func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId primitive.ObjectID, status *MaeSanta.GetDirectoryStatus) (*MaeSanta.GetDirectoryStatus, error) {
 	var files []file
 	filter := bson.D{{"dir_id", dirId}, {"deleted", false}} // get all files if not deleted
 	cur, err := server.mongoColls[FilesCollName].Find(ctx, filter)
@@ -54,7 +54,7 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 
 	for _, file := range files {
 		metadata := &MaeSanta.FileMetadata{
-			ApproxMetadata: &MaeSanta.FileApproxMetadata{Name: file.Name, DirPath: dirPath, UserId: file.UserId.Hex()},
+			ApproxMetadata: &MaeSanta.FileApproxMetadata{Name: file.Name, DirId: dirId.Hex(), UserId: file.UserId.Hex()},
 			FileId:         file.Id.Hex(),
 			IsDownloadable: false,             /* TODO change by real stored field */
 			LastEditorId:   file.UserId.Hex(), /* TODO ? */
@@ -73,16 +73,11 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, 
 	if err != nil {
 		return status, err
 	}
-	dirPath, err := server.findPathFromDir(ctx, dir.Id)
-	if err != nil {
-		return nil, err
-	}
-	dirPath = filepath.Dir(dirPath)
 	status.SubFiles.DirIndex = append(status.SubFiles.DirIndex,
 		&MaeSanta.DirMetadata{
 			ApproxMetadata: &MaeSanta.FileApproxMetadata{
 				Name:    dir.Name,
-				DirPath: dirPath,
+				DirId: dir.Id.Hex(),
 				UserId:  dir.UserId.Hex(),
 			},
 			DirId: dir.Id.Hex()})
@@ -99,7 +94,7 @@ func (server *SantaclausServerImpl) getOneDirectory(ctx context.Context, dirId p
 	if err != nil {
 		return status, err
 	}
-	status, err = server.addFilesToIndex(ctx, dirId, dirPath, status)
+	status, err = server.addFilesToIndex(ctx, dirId, status)
 	if err != nil {
 		return status, err
 	}
