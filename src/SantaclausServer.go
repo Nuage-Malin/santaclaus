@@ -16,7 +16,6 @@ import (
 )
 
 func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFileRequest) (status *pb.AddFileStatus, r error) {
-	/* todo check if filename already exists */
 	userId, err := primitive.ObjectIDFromHex(req.File.UserId)
 
 	if err != nil {
@@ -26,6 +25,12 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 	if err != nil {
 		return status, err
 		// TODO do something
+	}
+	/* Check if filename already exists */
+	filter := bson.D{{"name", req.File.Name}, {"dir_id", dirId}}
+	var fileFound file
+	if server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound /* todo would it be possible to put nil here ? */) == nil {
+		return nil, errors.New("File name already exists in this directory, aborting file creation")
 	}
 
 	// TODO find diskId
@@ -306,16 +311,20 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 	// find parent ID from req.Directory.DirPath
 	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
 
-	/* todo check if dirId already exists */
-
 	if err != nil {
 		return nil, err
 	}
 	dirId, err := primitive.ObjectIDFromHex(req.Directory.DirId)
 	if err != nil {
-		// TODO check error in another way than that
 		return nil, err
 	}
+	/* Check if dirname already exists */
+	filter := bson.D{{"name", req.Directory.Name}, {"parent_id", dirId}}
+	var dirFound file
+	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound /* todo would it be possible to put nil here ? */) == nil {
+		return nil, errors.New("Directory name already exists in this directory, aborting directory creation")
+	}
+
 	dir, r := server.createDir(ctx, userId, dirId, req.Directory.Name)
 	if r != nil {
 		return nil, r
