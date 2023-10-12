@@ -20,10 +20,9 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 	if err != nil {
 		return status, err
 	}
-	foundDirectory, err := server.findDirFromPath(ctx, req.File.DirPath, userId) // todo replace path with dir Id
+	dirId, err := primitive.ObjectIDFromHex(req.File.DirId)
 	if err != nil {
 		return status, err
-		// TODO do something
 	}
 
 	// TODO find diskId
@@ -36,7 +35,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *MaeSanta.A
 	newFile := file{
 		Id:         primitive.NewObjectID(),
 		Name:       req.File.Name,
-		DirId:      foundDirectory.Id, // TODO find dirId from dirpath
+		DirId:      dirId,
 		UserId:     userId,
 		Size:       req.FileSize,
 		DiskId:     foundDisk,
