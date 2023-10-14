@@ -16,19 +16,19 @@ import (
 )
 
 func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFileRequest) (status *pb.AddFileStatus, r error) {
-	userId, err := primitive.ObjectIDFromHex(req.File.UserId)
+	userId, r := primitive.ObjectIDFromHex(req.File.UserId)
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return status, r
 	}
-	dirId, err := primitive.ObjectIDFromHex(req.File.DirId)
-	if err != nil {
-		return status, err
-		// TODO do something
+	dirId, r := primitive.ObjectIDFromHex(req.File.DirId)
+	if r != nil {
+		return status, r
 	}
 	/* Check if filename already exists */
 	filter := bson.D{{"name", req.File.Name}, {"dir_id", dirId}}
 	var fileFound file
+
 	if server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound /* todo would it be possible to put nil here ? */) == nil {
 		return nil, errors.New("File name already exists in this directory, aborting file creation")
 	}
@@ -52,15 +52,15 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 		EditedAt:   time.Now(),
 		Deleted:    false,
 	}
-	insertRes, err := server.mongoColls[FilesCollName].InsertOne(ctx, newFile)
-	if err != nil {
-		return status, err
+	insertRes, r := server.mongoColls[FilesCollName].InsertOne(ctx, newFile)
+	if r != nil {
+		return status, r
 	}
 	newFileId, ok := insertRes.InsertedID.(primitive.ObjectID)
 
 	if ok == false {
 		log.Println("Wrong type assertion!")
-		// TODO check
+		return
 	}
 
 	status = &pb.AddFileStatus{
@@ -71,10 +71,10 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 }
 
 func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
-	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
+	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return status, r
 	}
 	filter := bson.D{{"_id", fileId}}
 	update := bson.D{{"$set", bson.D{{"deleted", true}}}} // only modify 'deleted' to true
@@ -130,10 +130,10 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 }
 
 func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
-	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
+	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return status, r
 	}
 	filter := bson.D{{"_id", fileId}}
 	res, r := server.mongoColls[FilesCollName].DeleteOne(ctx, filter)
@@ -220,15 +220,15 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 
 func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileStatus, error) {
 	var fileFound file
-	fileId, err := primitive.ObjectIDFromHex(req.FileId)
+	fileId, r := primitive.ObjectIDFromHex(req.FileId)
 
-	if err != nil {
-		return nil, err
+	if r != nil {
+		return nil, r
 	}
 	filter := bson.D{{"_id", fileId}}
-	err = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound)
-	if err != nil {
-		return nil, err
+	r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound)
+	if r != nil {
+		return nil, r
 	}
 
 	/* status := &pb.GetFileStatus{
@@ -260,10 +260,10 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 }
 
 func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *pb.UpdateFileSuccessRequest) (status *pb.UpdateFileSuccessStatus, r error) {
-	fileId, err := primitive.ObjectIDFromHex(req.GetFileId())
+	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return status, r
 	}
 
 	filter := bson.D{{"_id", fileId}}
@@ -309,14 +309,14 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.
 // Directories
 func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.AddDirectoryRequest) (status *pb.AddDirectoryStatus, r error) {
 	// find parent ID from req.Directory.DirPath
-	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
+	userId, r := primitive.ObjectIDFromHex(req.Directory.UserId)
 
-	if err != nil {
-		return nil, err
+	if r != nil {
+		return nil, r
 	}
-	dirId, err := primitive.ObjectIDFromHex(req.Directory.DirId)
-	if err != nil {
-		return nil, err
+	dirId, r := primitive.ObjectIDFromHex(req.Directory.DirId)
+	if r != nil {
+		return nil, r
 	}
 	/* Check if dirname already exists */
 	filter := bson.D{{"name", req.Directory.Name}, {"parent_id", dirId}}
@@ -352,8 +352,6 @@ func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirI
 		return errors.New("Could not modify directory to delete")
 	}
 	filter = bson.D{{"dir_id", dirId}}
-	// update := bson.D{{"$set", bson.D{{"deleted", true}}}} // todo update deleted ? dirId ?
-	// res, r := server.mongoColls[DirectoriesCollName].Update(ctx, filter, update)
 	findRes, r := server.mongoColls[FilesCollName].Find(ctx, filter)
 	if r != nil {
 		return r
@@ -369,7 +367,7 @@ func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirI
 }
 
 /**
- * recursivelly remove directories from directory
+ * recursivelly remove children directories of a directory
  */
 func (server *SantaclausServerImpl) removeSubDirectories(ctx context.Context, parentId *primitive.ObjectID, status *pb.RemoveDirectoryStatus) (r error) {
 	var dirs []directory
@@ -394,22 +392,36 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 	//	find all subdirectories recursively
 	//	in each subdirectory, add fileIds to the status (fileIdsToRemove)
 	//	set directories as deleted
-	dirId, err := primitive.ObjectIDFromHex(req.DirId)
+	dirId, r := primitive.ObjectIDFromHex(req.DirId)
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return nil, r
 	}
+	// Check if dir exists
+	filter := bson.D{{"_id", dirId}}
+	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(nil /* todo check if it actually works */)
+	if r != nil {
+		return nil, r
+	}
+
 	status = &pb.RemoveDirectoryStatus{FileIdsToRemove: make([]string, 0)}
+	// Mark all subdirectories as deleted (Virtual)
 	r = server.removeSubDirectories(ctx, &dirId, status)
 	if r != nil {
 		return status, r
 	}
+	// Mark this directory as deleted (Virtual)
 	r = server.removeOneDirectory(ctx, &dirId, status)
+	// Remove all directories that have been marked as deleted in recursive sub functions (Physical)
+	filter = bson.D{{"deleted", true}}
+	_, r = server.mongoColls[DirectoriesCollName].DeleteMany(ctx, filter)
+	if r != nil {
+		return nil, r
+	}
 	return status, r
 }
 
 func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.MoveDirectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
-	// todo if nil object id for dirId, move to root dir ?rectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
 	// todo if nil object id for dirId, move to root dir ?
 	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
@@ -425,9 +437,9 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 		}
 	}
 	var filter bson.D
-	// If dirId is incorrect, return error
 	var parentDir directory
 
+	// todo check if newLocationDirId is a directory that exists and is a directory of this user ?
 	if newLocationDirId != primitive.NilObjectID {
 		filter = bson.D{{"_id", newLocationDirId}}
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&parentDir)
@@ -494,15 +506,13 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 	return status, r
 }
 
-func (server *SantaclausServerImpl) VirtualRemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveDirectoryStatus, r error) {
+func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveDirectoryStatus, r error) {
 	userId, r := primitive.ObjectIDFromHex(req.UserId)
 
 	// directories
 	filter := bson.D{{"user_id", userId}}
 	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
 	var dirs []directory
-
-	// todo actually remove directories from database at some point
 
 	if r != nil {
 		return status, r
@@ -517,28 +527,16 @@ func (server *SantaclausServerImpl) VirtualRemoveUser(ctx context.Context, req *
 		removeDirStatus, r := server.RemoveDirectory(ctx, &pb.RemoveDirectoryRequest{DirId: dir.Id.String() /* todo use other method to convert to string ? */})
 		if r != nil {
 			log.Print(r)
+			// Will print when removing sub directory of an already deleted directory, not a big problem but have to have it in mind when reading logs
 		}
 		for _, fileId := range removeDirStatus.FileIdsToRemove {
 			filesToRemove.FileIds = append(filesToRemove.FileIds, fileId)
+			status.FileIdsToRemove = append(status.FileIdsToRemove, fileId)
 		}
 	}
 	//
 	// files
 	server.VirtualRemoveFiles(ctx, &filesToRemove)
 	//
-	return status, r
-}
-
-func (server *SantaclausServerImpl) PhysicalRemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveUserStatus, r error) {
-	userId, r := primitive.ObjectIDFromHex(req.UserId)
-	filter := bson.D{{"user_id", userId}}
-
-	_, r = server.mongoColls[FilesCollName].DeleteMany(ctx, filter)
-
-	if r != nil {
-		return status, r
-	}
-	// todo physical remove directory
-
 	return status, r
 }
