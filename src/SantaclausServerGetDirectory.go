@@ -111,36 +111,3 @@ func (server *SantaclausServerImpl) GetRootDirectory(ctx context.Context, recurs
 	}
 	return server.getOneDirectory(ctx, rootDir.Id, recursive, status)
 }
-
-/*
- * If dirId is nil, return root directory
- */
-func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *pb.GetDirectoryRequest) (status *pb.GetDirectoryStatus, r error) {
-	println("Request: GetDirectory")
-	userId, r := primitive.ObjectIDFromHex(req.UserId)
-
-	if r != nil {
-		return nil, r
-	}
-
-	status = &pb.GetDirectoryStatus{
-		SubFiles: &pb.FilesIndex{
-			FileIndex: []*pb.FileMetadata{},
-			DirIndex:  []*pb.DirMetadata{},
-		},
-	}
-
-	if req.DirId == nil {
-		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
-	}
-	dirId, r := primitive.ObjectIDFromHex(*req.DirId)
-
-	if r != nil {
-		return nil, r
-	}
-	if dirId == primitive.NilObjectID { // todo does it actually ever branches through that ?
-		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
-	} else {
-		return server.getOneDirectory(ctx, dirId, req.IsRecursive, status)
-	}
-}

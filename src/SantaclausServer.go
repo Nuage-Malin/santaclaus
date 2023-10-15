@@ -15,7 +15,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Files
+
 func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFileRequest) (status *pb.AddFileStatus, r error) {
+	log.Println("Request: AddFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	userId, r := primitive.ObjectIDFromHex(req.File.UserId)
 
 	if r != nil {
@@ -27,9 +31,14 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 	}
 	/* Check if filename already exists */
 	filter := bson.D{bson.E{Key: "name", Value: req.File.Name}, bson.E{Key: "dir_id", Value: dirId}}
-	var fileFound file
+	// var fileFound file
 
-	if server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound /* todo would it be possible to put nil here ? */) == nil {
+	var fileFound file
+	if server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound) == nil {
+
+		status = &pb.AddFileStatus{
+			FileId: fileFound.Id.Hex(),
+			DiskId: fileFound.DiskId.Hex()}
 		return nil, errors.New("File name already exists in this directory, aborting file creation")
 	}
 
@@ -71,6 +80,8 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 }
 
 func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
+	log.Println("Request: VirtualRemoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if r != nil {
@@ -97,11 +108,13 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 }
 
 func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
+	log.Println("Request: VirtualRemoveFiles" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	var fileId primitive.ObjectID
 	var tmpErr error
 	var filter bson.D
 	var res *mongo.UpdateResult
-	update := bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "deleted", Value: true}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "deleted", Value: true}}}}
 
 	for _, tmpFileId := range req.FileIds {
 		fileId, tmpErr = primitive.ObjectIDFromHex(tmpFileId)
@@ -130,6 +143,8 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 }
 
 func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
+	log.Println("Request: PhysicalRemoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if r != nil {
@@ -149,6 +164,8 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 }
 
 func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
+	log.Println("Request: VirtualRemoveFiles" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	var fileId primitive.ObjectID
 	var tmpErr error
 	var filter bson.D
@@ -177,6 +194,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req
 }
 
 func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFileRequest) (status *pb.MoveFileStatus, r error) {
+	log.Println("Request: MoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
 
 	// todo if nil object id for dirId, move to root dir ?
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
@@ -219,6 +237,8 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 }
 
 func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileStatus, error) {
+	log.Println("Request: GetFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	var fileFound file
 	fileId, r := primitive.ObjectIDFromHex(req.FileId)
 
@@ -261,6 +281,8 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 }
 
 func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *pb.UpdateFileSuccessRequest) (status *pb.UpdateFileSuccessStatus, r error) {
+	log.Println("Request: UpdateFileSuccess" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if r != nil {
@@ -286,7 +308,10 @@ func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *
 	return status, r
 }
 
+// Disks
+
 func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.ChangeFileDiskRequest) (status *pb.ChangeFileDiskStatus, r error) {
+	log.Println("Request: ChangeFileDisk" /* todo try to get function name from variable or macro */) // todo replace with class request logger
 
 	filter := bson.D{bson.E{Key: "_id", Value: req.GetFileId()}}
 	// find the file in order not to put it on the same disk as it is already
@@ -308,7 +333,10 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.
 }
 
 // Directories
+
 func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.AddDirectoryRequest) (status *pb.AddDirectoryStatus, r error) {
+	log.Println("Request: AddDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	// find parent ID from req.Directory.DirPath
 	userId, r := primitive.ObjectIDFromHex(req.Directory.UserId)
 
@@ -321,9 +349,10 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 	}
 	/* Check if dirname already exists */
 	filter := bson.D{bson.E{Key: "name", Value: req.Directory.Name}, bson.E{Key: "parent_id", Value: dirId}}
-	var dirFound file
-	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound /* todo would it be possible to put nil here ? */) == nil {
-		return nil, errors.New("Directory name already exists in this directory, aborting directory creation")
+	var dirFound directory
+	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound) == nil {
+		status = &pb.AddDirectoryStatus{DirId: dirFound.Id.Hex()}
+		return status, errors.New("Directory name already exists in this directory, aborting directory creation")
 	}
 
 	dir, r := server.createDir(ctx, userId, dirId, req.Directory.Name)
@@ -335,6 +364,8 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 }
 
 func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb.RemoveDirectoryRequest) (status *pb.RemoveDirectoryStatus, r error) {
+	log.Println("Request: RemoveDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	//	find all subdirectories recursively
 	//	in each subdirectory, add fileIds to the status (fileIdsToRemove)
 	//	set directories as deleted
@@ -345,7 +376,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 	}
 	// Check if dir exists
 	filter := bson.D{bson.E{Key: "_id", Value: dirId}}
-	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(nil /* todo check if it actually works */)
+	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(nil)
 	if r != nil {
 		return nil, r
 	}
@@ -368,6 +399,8 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 }
 
 func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.MoveDirectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
+	log.Println("Request: MoveDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	// todo if nil object id for dirId, move to root dir ?
 	dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
@@ -418,9 +451,9 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 			return nil, errors.New("Cannot store directory in its subdirectory")
 		}
 		if req.Name != nil {
-			update = bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}}}
+			update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}}}
 		} else {
-			update = bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "name", Value: dir.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}}}
+			update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: dir.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}}}
 		}
 	} else {
 		if req.Name == nil {
@@ -432,7 +465,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 			return nil, errors.New("Directory name already exists in this directory, aborting move")
 		}
 		// In order not to change the location, but only the name, in the parameter, specify the same dirId as actual and new dir
-		update = bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "name", Value: *req.Name}}}}
+		update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: *req.Name}}}}
 	}
 
 	filter = bson.D{bson.E{Key: "_id", Value: dirId}}
@@ -452,7 +485,45 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 	return status, r
 }
 
+/*
+ * If dirId is nil, return root directory
+ */
+func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *pb.GetDirectoryRequest) (status *pb.GetDirectoryStatus, r error) {
+	log.Println("Request: GetDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
+	userId, r := primitive.ObjectIDFromHex(req.UserId)
+
+	if r != nil {
+		return nil, r
+	}
+
+	status = &pb.GetDirectoryStatus{
+		SubFiles: &pb.FilesIndex{
+			FileIndex: []*pb.FileMetadata{},
+			DirIndex:  []*pb.DirMetadata{},
+		},
+	}
+
+	if req.DirId == nil {
+		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
+	}
+	dirId, r := primitive.ObjectIDFromHex(*req.DirId)
+
+	if r != nil {
+		return nil, r
+	}
+	if dirId == primitive.NilObjectID { // todo does it actually ever branches through that ?
+		return server.GetRootDirectory(ctx, req.IsRecursive, userId, status)
+	} else {
+		return server.getOneDirectory(ctx, dirId, req.IsRecursive, status)
+	}
+}
+
+// Users
+
 func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveDirectoryStatus, r error) {
+	log.Println("Request: RemoveUser" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+
 	userId, r := primitive.ObjectIDFromHex(req.UserId)
 
 	// directories

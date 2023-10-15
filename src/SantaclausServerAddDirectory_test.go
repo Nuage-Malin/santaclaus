@@ -63,8 +63,8 @@ func TestCreateSubDirectoryTwice(t *testing.T) {
 	directoryIds[2] = dirId
 
 	status, err = server.AddDirectory(ctx, &request)
-	if err != nil {
-		t.Fatal(err) // log and fail
+	if err == nil {
+		t.Fatal("Error: directory was created twice without error") // log and fail
 	}
 	if dirId != status.DirId {
 		t.Fatalf("DirId is different from previously created same directory") // log and fail
