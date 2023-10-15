@@ -347,18 +347,8 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 	if r != nil {
 		return nil, r
 	}
-	/* Check if dirname already exists */
-	filter := bson.D{bson.E{Key: "name", Value: req.Directory.Name}, bson.E{Key: "parent_id", Value: dirId}}
-	var dirFound directory
-	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound) == nil {
-		status = &pb.AddDirectoryStatus{DirId: dirFound.Id.Hex()}
-		return status, errors.New("Directory name already exists in this directory, aborting directory creation")
-	}
 
 	dir, r := server.createDir(ctx, userId, dirId, req.Directory.Name)
-	if r != nil {
-		return nil, r
-	}
 	status = &pb.AddDirectoryStatus{DirId: dir.Id.Hex()}
 	return status, r
 }

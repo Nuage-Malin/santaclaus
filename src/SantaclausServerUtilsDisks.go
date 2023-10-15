@@ -56,7 +56,7 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	// opts := options.Update().SetUpsert(true)
 
 	for _, newDisk := range disks {
-		filter = bson.D{{"physical_id", newDisk.Id}}
+		filter = bson.D{bson.E{Key: "physical_id", Value: newDisk.Id}}
 		findRes := server.mongoColls[DisksCollName].FindOne(ctx, filter)
 		var foundDisk disk
 
@@ -67,7 +67,11 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 			}
 		}
 
-		update = bson.D{{"_id", primitive.NewObjectID()}, {"physical_id", newDisk.Id}, {"total_size", 1000000000}, {"available_size", 1000000000}} // todo put real values
+		update = bson.D{
+			bson.E{Key: "_id", Value: primitive.NewObjectID()},
+			bson.E{Key: "physical_id", Value: newDisk.Id},
+			bson.E{Key: "total_size", Value: 1000000000},     // todo put real value
+			bson.E{Key: "available_size", Value: 1000000000}} // todo put real values
 
 		// update DB containing disks
 		insertRes, err := server.mongoColls[DisksCollName].InsertOne(ctx, update)
@@ -88,7 +92,7 @@ func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileS
 
 	var disks []disk
 	diskFound := disk{Id: primitive.NilObjectID, AvailableSize: 0, TotalSize: 0}
-	filter := bson.D{{"available_size", bson.D{{"$gt", fileSize}}}}
+	filter := bson.D{bson.E{Key: "available_size", Value: bson.D{bson.E{Key: "$gt", Value: fileSize}}}}
 	res, r := server.mongoColls[DisksCollName].Find(ctx, filter)
 
 	if r != nil {

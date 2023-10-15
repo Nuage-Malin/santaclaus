@@ -14,7 +14,7 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 	/* find all children directories thanks to a request with their parent ID (which is the current dirId) */
 
 	var dirs []directory
-	filter := bson.D{primitive.E{Key: "parent_id", Value: dirId}, {"deleted", false}}
+	filter := bson.D{primitive.E{Key: "parent_id", Value: dirId}, bson.E{Key: "deleted", Value: false}}
 	childDirIds, err := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
 
 	if err != nil {
@@ -40,7 +40,7 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 
 func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId primitive.ObjectID, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
 	var files []file
-	filter := bson.D{{"dir_id", dirId}, {"deleted", false}} // get all files if not deleted
+	filter := bson.D{bson.E{Key: "dir_id", Value: dirId}, bson.E{Key: "deleted", Value: false}} // get all files if not deleted
 	cur, err := server.mongoColls[FilesCollName].Find(ctx, filter)
 
 	if err != nil {
@@ -67,7 +67,7 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 
 func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, dirId primitive.ObjectID, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
 	var dir directory
-	filter := bson.D{{"_id", dirId}, {"deleted", false}} // get the directory if exists and not deleted
+	filter := bson.D{bson.E{Key: "_id", Value: dirId}, bson.E{Key: "deleted", Value: false}} // get the directory if exists and not deleted
 	err := server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 
 	if err != nil {

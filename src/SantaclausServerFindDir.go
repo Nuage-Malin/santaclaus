@@ -4,54 +4,18 @@ import (
 	"context"
 	"log"
 	"path/filepath"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (server *SantaclausServerImpl) createDir(ctx context.Context, userId primitive.ObjectID, parentId primitive.ObjectID, name string) (dir directory, err error) {
-	// check if directory already exists
-	findRes := server.mongoColls[DirectoriesCollName].FindOne(ctx, primitive.D{{"parent_id", parentId}, {"name", name}, {"user_id", userId}})
-
-	if findRes.Err() == nil {
-		// if found existing directory, return it
-		err = findRes.Decode(&dir)
-		if err != nil {
-			return dir, err
-		}
-		return dir, nil
-	}
-
-	dir = directory{
-		Id:        primitive.NewObjectID(),
-		Name:      name,
-		UserId:    userId,
-		ParentId:  parentId,
-		CreatedAt: time.Now(),
-		EditedAt:  time.Now(),
-		Deleted:   false}
-	insertRes, err := server.mongoColls[DirectoriesCollName].InsertOne(ctx, dir)
-
-	if insertRes == nil || err != nil {
-		return dir, err
-	}
-	dir.Id = insertRes.InsertedID.(primitive.ObjectID)
-	return dir, nil
-}
-
-func (server *SantaclausServerImpl) createRootDir(ctx context.Context, userId primitive.ObjectID) (directory, error) {
-
-	return server.createDir(ctx, userId, primitive.NilObjectID, "/")
-}
-
 /**
  * creates root dir if doesn't exists, otherwise return existing root dir
  */
 func (server *SantaclausServerImpl) checkRootDirExistence(ctx context.Context, userId primitive.ObjectID) (rootDir directory, err error) {
 
-	targetDir := bson.D{{"name", "/"}, {"user_id", userId}}
+	targetDir := bson.D{bson.E{Key: "name", Value: "/"}, bson.E{Key: "user_id", Value: userId}}
 	res := server.mongoColls[DirectoriesCollName].FindOne(ctx, targetDir)
 
 	if res.Err() != nil {
@@ -79,7 +43,7 @@ func (server *SantaclausServerImpl) findDirFromPath(ctx context.Context, dirPath
 	var didFind bool = false
 	dirName := filepath.Base(dirPath)
 	dirBase := filepath.Dir(dirPath)
-	targetDirectory := bson.D{{"name", dirName}, {"user_id", userId}}
+	targetDirectory := bson.D{bson.E{Key: "name", Value: dirName}, bson.E{Key: "user_id", Value: userId}}
 	cur, err := server.mongoColls[DirectoriesCollName].Find(ctx, targetDirectory /*, &targetDirectoryOptions*/)
 
 	if err != nil {
@@ -100,7 +64,7 @@ func (server *SantaclausServerImpl) findDirFromPath(ctx context.Context, dirPath
 			}
 			dirName = filepath.Base(dirBase)
 			dirBase = filepath.Dir(dirBase)
-			targetDirectory = bson.D{{"_id", tmpDir.ParentId}, {"name", dirName}, {"user_id", userId}}
+			targetDirectory = bson.D{bson.E{Key: "_id", Value: tmpDir.ParentId}, bson.E{Key: "name", Value: dirName}, bson.E{Key: "user_id", Value: userId}}
 			res := server.mongoColls[DirectoriesCollName].FindOne(ctx, targetDirectory /*, &targetDirectoryOptions*/)
 			if res == nil {
 				break
@@ -122,7 +86,7 @@ func (server *SantaclausServerImpl) findPathFromDir(ctx context.Context, dirId p
 	nextId := dirId
 
 	for nextId != primitive.NilObjectID {
-		err = server.mongoColls[DirectoriesCollName].FindOne(ctx, bson.D{{"_id", nextId}}).Decode(&currentDir)
+		err = server.mongoColls[DirectoriesCollName].FindOne(ctx, bson.D{bson.E{Key: "_id", Value: nextId}}).Decode(&currentDir)
 		if err != nil {
 			return "", err
 		}
