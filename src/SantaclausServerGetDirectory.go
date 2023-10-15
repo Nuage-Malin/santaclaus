@@ -116,7 +116,7 @@ func (server *SantaclausServerImpl) GetRootDirectory(ctx context.Context, recurs
  * If dirId is nil, return root directory
  */
 func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *pb.GetDirectoryRequest) (status *pb.GetDirectoryStatus, r error) {
-	println("Requets: GetDirectory")
+	println("Request: GetDirectory")
 	userId, r := primitive.ObjectIDFromHex(req.UserId)
 
 	if r != nil {

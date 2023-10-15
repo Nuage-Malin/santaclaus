@@ -26,7 +26,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 		return status, r
 	}
 	/* Check if filename already exists */
-	filter := bson.D{{"name", req.File.Name}, {"dir_id", dirId}}
+	filter := bson.D{bson.E{Key: "name", Value: req.File.Name}, bson.E{Key: "dir_id", Value: dirId}}
 	var fileFound file
 
 	if server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound /* todo would it be possible to put nil here ? */) == nil {
@@ -76,8 +76,8 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 	if r != nil {
 		return status, r
 	}
-	filter := bson.D{{"_id", fileId}}
-	update := bson.D{{"$set", bson.D{{"deleted", true}}}} // only modify 'deleted' to true
+	filter := bson.D{bson.E{Key: "_id", Value: fileId}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "deleted", Value: true}}}} // only modify 'deleted' to true
 
 	res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update)
 	if r != nil {
@@ -101,7 +101,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 	var tmpErr error
 	var filter bson.D
 	var res *mongo.UpdateResult
-	update := bson.D{{"$set", bson.D{{"deleted", true}}}}
+	update := bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "deleted", Value: true}}}}
 
 	for _, tmpFileId := range req.FileIds {
 		fileId, tmpErr = primitive.ObjectIDFromHex(tmpFileId)
@@ -110,7 +110,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 			r = tmpErr
 			continue
 		}
-		filter = bson.D{{"_id", fileId}}
+		filter = bson.D{bson.E{Key: "_id", Value: fileId}}
 		res, tmpErr = server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update)
 		if tmpErr != nil {
 			log.Print(tmpErr)
@@ -135,7 +135,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 	if r != nil {
 		return status, r
 	}
-	filter := bson.D{{"_id", fileId}}
+	filter := bson.D{bson.E{Key: "_id", Value: fileId}}
 	res, r := server.mongoColls[FilesCollName].DeleteOne(ctx, filter)
 
 	if r != nil {
@@ -161,7 +161,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req
 			r = tmpErr
 			continue
 		}
-		filter = bson.D{{"_id", fileId}}
+		filter = bson.D{bson.E{Key: "_id", Value: fileId}}
 		res, tmpErr = server.mongoColls[FilesCollName].DeleteOne(ctx, filter)
 		if tmpErr != nil {
 			log.Print(tmpErr)
@@ -190,7 +190,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		return nil, r
 	}
 	// If dirId is incorrect, return error
-	filter := bson.D{{"_id", dirId}}
+	filter := bson.D{bson.E{Key: "_id", Value: dirId}}
 	var dir directory
 	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 	if r != nil {
@@ -199,8 +199,8 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	// note: If name already exists, no problem, as id uniquely identifies the file
 	// todo change the behaviour described above, cause problem for directories
 
-	filter = bson.D{{"_id", fileId}}
-	update := bson.D{{"$set", bson.D{{"name", req.NewFileName}, {"dir_id", dirId}}}}
+	filter = bson.D{bson.E{Key: "_id", Value: fileId}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: req.NewFileName}, bson.E{Key: "dir_id", Value: dirId}}}}
 	res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 	if r != nil {
 		return nil, r
@@ -225,7 +225,8 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 	if r != nil {
 		return nil, r
 	}
-	filter := bson.D{{"_id", fileId}}
+	// filter := bson.D{bson.E{Key: "_id", Value: fileId}}
+	filter := bson.D{bson.E{Key: "_id", Value: fileId}}
 	r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound)
 	if r != nil {
 		return nil, r
@@ -266,8 +267,8 @@ func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *
 		return status, r
 	}
 
-	filter := bson.D{{"_id", fileId}}
-	update := bson.D{{"$set", bson.D{{"size", req.GetNewFileSize()}}}}
+	filter := bson.D{bson.E{Key: "_id", Value: fileId}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "size", Value: req.GetNewFileSize()}}}}
 
 	res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update)
 	if r != nil {
@@ -287,7 +288,7 @@ func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *
 
 func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.ChangeFileDiskRequest) (status *pb.ChangeFileDiskStatus, r error) {
 
-	filter := bson.D{primitive.E{Key: "_id", Value: req.GetFileId()}}
+	filter := bson.D{bson.E{Key: "_id", Value: req.GetFileId()}}
 	// find the file in order not to put it on the same disk as it is already
 	server.mongoColls[FilesCollName].FindOne(ctx, filter)
 
@@ -296,11 +297,11 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.
 	//		there is some other file from this user
 	// 	there is enough space for the file (and a bit more)
 
-	// filter = bson.D{primitive.E{Key: "diskId", Value: /* value found from last request */}, primitive.E{Key: "userId", Value: /* value found from last request */}}
+	// filter = bson.D{bson.E{Key: "diskId", Value: /* value found from last request */}, bson.E{Key: "userId", Value: /* value found from last request */}}
 	// todo exclude from filter diskId that is the actual
 	// server.mongoColls[FilesCollName].Find(ctx, filter, update)
 
-	// update := bson.D{primitive.E{Key: "size", Value: /* new disk id */}}
+	// update := bson.D{bson.E{Key: "size", Value: /* new disk id */}}
 	// server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update)
 
 	return status, r
@@ -319,7 +320,7 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 		return nil, r
 	}
 	/* Check if dirname already exists */
-	filter := bson.D{{"name", req.Directory.Name}, {"parent_id", dirId}}
+	filter := bson.D{bson.E{Key: "name", Value: req.Directory.Name}, bson.E{Key: "parent_id", Value: dirId}}
 	var dirFound file
 	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound /* todo would it be possible to put nil here ? */) == nil {
 		return nil, errors.New("Directory name already exists in this directory, aborting directory creation")
@@ -335,8 +336,8 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 
 func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirId *primitive.ObjectID, status *pb.RemoveDirectoryStatus) (r error) {
 	var files []file
-	filter := bson.D{{"_id", dirId}}
-	update := bson.D{{"$set", bson.D{{"deleted", true}}}}
+	filter := bson.D{bson.E{Key: "_id", Value: dirId}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "deleted", Value: true}}}}
 	updateRes, r := server.mongoColls[DirectoriesCollName].UpdateOne(ctx, filter, update)
 
 	if r != nil {
@@ -351,7 +352,7 @@ func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirI
 	if updateRes.ModifiedCount != 1 {
 		return errors.New("Could not modify directory to delete")
 	}
-	filter = bson.D{{"dir_id", dirId}}
+	filter = bson.D{bson.E{Key: "dir_id", Value: dirId}}
 	findRes, r := server.mongoColls[FilesCollName].Find(ctx, filter)
 	if r != nil {
 		return r
@@ -371,7 +372,7 @@ func (server *SantaclausServerImpl) removeOneDirectory(ctx context.Context, dirI
  */
 func (server *SantaclausServerImpl) removeSubDirectories(ctx context.Context, parentId *primitive.ObjectID, status *pb.RemoveDirectoryStatus) (r error) {
 	var dirs []directory
-	filter := bson.D{{"parent_id", parentId}}
+	filter := bson.D{bson.E{Key: "parent_id", Value: parentId}}
 	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
 
 	if r != nil {
@@ -398,7 +399,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 		return nil, r
 	}
 	// Check if dir exists
-	filter := bson.D{{"_id", dirId}}
+	filter := bson.D{bson.E{Key: "_id", Value: dirId}}
 	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(nil /* todo check if it actually works */)
 	if r != nil {
 		return nil, r
@@ -413,7 +414,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 	// Mark this directory as deleted (Virtual)
 	r = server.removeOneDirectory(ctx, &dirId, status)
 	// Remove all directories that have been marked as deleted in recursive sub functions (Physical)
-	filter = bson.D{{"deleted", true}}
+	filter = bson.D{bson.E{Key: "deleted", Value: true}}
 	_, r = server.mongoColls[DirectoriesCollName].DeleteMany(ctx, filter)
 	if r != nil {
 		return nil, r
@@ -441,7 +442,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 
 	// todo check if newLocationDirId is a directory that exists and is a directory of this user ?
 	if newLocationDirId != primitive.NilObjectID {
-		filter = bson.D{{"_id", newLocationDirId}}
+		filter = bson.D{bson.E{Key: "_id", Value: newLocationDirId}}
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&parentDir)
 		if r != nil {
 			return nil, r
@@ -449,7 +450,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 	}
 	var update bson.D
 
-	filter = bson.D{{"_id", dirId}}
+	filter = bson.D{bson.E{Key: "_id", Value: dirId}}
 	var dir directory
 	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 	if r != nil {
@@ -460,9 +461,9 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 		// todo refactor this piece of code
 		// a lot of code could be removed cause it does the same thing twice
 		if req.Name != nil {
-			filter = bson.D{{"name", *req.Name}, {"parent_id", newLocationDirId}}
+			filter = bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}
 		} else {
-			filter = bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}
+			filter = bson.D{bson.E{Key: "name", Value: dir.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}
 		}
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r == nil {
@@ -472,24 +473,24 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 			return nil, errors.New("Cannot store directory in its subdirectory")
 		}
 		if req.Name != nil {
-			update = bson.D{{"$set", bson.D{{"name", *req.Name}, {"parent_id", newLocationDirId}}}}
+			update = bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}}}
 		} else {
-			update = bson.D{{"$set", bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}}}
+			update = bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "name", Value: dir.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}}}}
 		}
 	} else {
 		if req.Name == nil {
 			return nil, errors.New("No new name nor new location id provided for directory move")
 		}
-		filter = bson.D{{"name", *req.Name}, {"parent_id", dir.ParentId}} // todo add * for every valid req.name ?
+		filter = bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "parent_id", Value: dir.ParentId}} // todo add * for every valid req.name ?
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r == nil {
 			return nil, errors.New("Directory name already exists in this directory, aborting move")
 		}
 		// In order not to change the location, but only the name, in the parameter, specify the same dirId as actual and new dir
-		update = bson.D{{"$set", bson.D{{"name", *req.Name}}}}
+		update = bson.D{bson.E{Key: "$setValue:", Value: bson.D{bson.E{Key: "name", Value: *req.Name}}}}
 	}
 
-	filter = bson.D{{"_id", dirId}}
+	filter = bson.D{bson.E{Key: "_id", Value: dirId}}
 	res, r := server.mongoColls[DirectoriesCollName].UpdateOne(ctx, filter, update)
 
 	if r != nil {
@@ -510,8 +511,8 @@ func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.Remo
 	userId, r := primitive.ObjectIDFromHex(req.UserId)
 
 	// directories
-	filter := bson.D{{"user_id", userId}}
-	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
+	filter := bson.D{bson.E{Key: "user_id", Value: userId}}
+	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter) /* todo do the same for files ? */
 	var dirs []directory
 
 	if r != nil {
