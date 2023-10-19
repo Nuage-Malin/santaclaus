@@ -196,12 +196,16 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	log.Println("Request: MoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
 
 	if req.DirId == nil && req.NewFileName == nil {
+		println("4")
+
 		return nil, errors.New("No new directory and file name, abortin file move")
 	}
 	// todo if nil object id for dirId, move to root dir ?
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if r != nil {
+		println("3")
+
 		return status, r
 	}
 	/// Check if file of fileId exists
@@ -209,6 +213,8 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	var currentFile file
 	r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&currentFile)
 	if r != nil {
+		println("-2")
+
 		return status, r
 	}
 
@@ -220,6 +226,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
 		if r != nil {
+			println("-1")
 			return nil, r
 		}
 		// If dirId is incorrect, return error
@@ -227,6 +234,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		var dir directory
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r != nil {
+			println("0")
 			return nil, r
 		}
 		// Check if file with this name exists in the new directory
