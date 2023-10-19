@@ -230,7 +230,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 			return nil, r
 		}
 		// Check if file with this name exists in the new directory
-		filter = bson.D{bson.E{Key: "name", Value: currentFile.Name}, bson.E{Key: "dirId", Value: dirId}}
+		filter = bson.D{bson.E{Key: "name", Value: currentFile.Name}, bson.E{Key: "dir_id", Value: dirId}}
 		r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&tmpFileFound)
 		if r == nil {
 			return nil, errors.New("File with this name already exists in the new directory")
@@ -255,7 +255,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 			return nil, r
 		}
 		// Check if file with new name already exists in this directory
-		filter = bson.D{bson.E{Key: "DirId", Value: currentFile.DirId}, bson.E{Key: "name", Value: newFileName}}
+		filter = bson.D{bson.E{Key: "dir_id", Value: currentFile.DirId}, bson.E{Key: "name", Value: newFileName}}
 		r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&tmpFileFound)
 		if r == nil {
 			return nil, errors.New("File with this new name already exists, aborting move")
