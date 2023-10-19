@@ -10,12 +10,15 @@ NAME	=	santaclaus
 SRCDIR	=	src
 
 SRC		=	main.go \
-			SantaclausServer.go \
-			SantaclausServerStructs.go \
-			SantaclausServerInit.go \
+			SantaclausServerCreateDir.go \
+			SantaclausServerFindDir.go \
 			SantaclausServerGetDirectory.go \
-			SantaclausServerUtils.go \
-			SantaclausServerUtilsDisks.go \
+			SantaclausServer.go \
+			SantaclausServerInit.go \
+			SantaclausServerRemoveDirectory.go \
+			SantaclausServerStructs.go \
+			SantaclausServerUtilsDisks.go
+
 
 SRC		:= $(addprefix $(SRCDIR)/, $(SRC))
 
