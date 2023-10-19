@@ -102,7 +102,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 	// return nil, fmt.Errorf("Could not upsert file %s\n", fileId)
 	// }
 	status = &pb.RemoveFileStatus{}
-	return status, r
+	return status, nil
 }
 
 func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
@@ -137,7 +137,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 			continue
 		}
 	}
-	return status, r
+	return status, nil
 }
 
 func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
@@ -188,7 +188,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req
 			continue
 		}
 	}
-	return status, r
+	return status, nil
 }
 
 // todo differentiate move file and rename file
@@ -348,7 +348,7 @@ func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *
 	// if res.UpsertedCount != 1 {
 	// return nil, fmt.Errorf("Could not upsert file %s\n", fileId)
 	// }
-	return status, r
+	return status, nil
 }
 
 // Disks
@@ -372,7 +372,7 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.
 	// update := bson.D{bson.E{Key: "size", Value: /* new disk id */}}
 	// server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update)
 
-	return status, r
+	return status, nil
 }
 
 // Directories
@@ -392,7 +392,7 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 		return nil, r
 	}
 	status = &pb.AddDirectoryStatus{DirId: dir.Id.Hex()}
-	return status, r
+	return status, nil
 }
 
 func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb.RemoveDirectoryRequest) (status *pb.RemoveDirectoryStatus, r error) {
@@ -427,7 +427,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
 	if r != nil {
 		return nil, r
 	}
-	return status, r
+	return status, nil
 }
 
 func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.MoveDirectoryRequest) (status *pb.MoveDirectoryStatus, r error) {
@@ -587,5 +587,5 @@ func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.Remo
 	// files
 	server.VirtualRemoveFiles(ctx, &filesToRemove)
 	//
-	return status, r
+	return status, nil
 }
