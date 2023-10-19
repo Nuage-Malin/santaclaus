@@ -233,17 +233,21 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		filter = bson.D{bson.E{Key: "name", Value: currentFile.Name}, bson.E{Key: "dir_id", Value: dirId}}
 		r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&tmpFileFound)
 		if r == nil {
+			println("1")
 			return nil, errors.New("File with this name already exists in the new directory")
 		}
 		update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "dir_id", Value: dirId}}}}
 		res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 		if r != nil {
+			println("2")
 			return nil, r
 		}
 		if res.MatchedCount != 1 {
+			println("3")
 			return nil, errors.New("Could not find file to be updated")
 		}
 		if res.ModifiedCount != 1 {
+			println("4")
 			return nil, errors.New("Could not modify file directory")
 		}
 	}
