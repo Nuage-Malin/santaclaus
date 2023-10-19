@@ -56,7 +56,7 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 		metadata := &pb.FileMetadata{
 			ApproxMetadata: &pb.FileApproxMetadata{Name: file.Name, DirId: dirId.Hex(), UserId: file.UserId.Hex()},
 			FileId:         file.Id.Hex(),
-			IsDownloadable: false,             /* TODO change by real stored field */
+			State: 			pb.FileState_UNKNOWN,
 			LastEditorId:   file.UserId.Hex(), /* TODO ? */
 			Creation:       &timestamppb.Timestamp{Seconds: file.CreatedAt.Unix()},
 			LastEdit:       &timestamppb.Timestamp{Seconds: file.EditedAt.Unix()}}
@@ -74,11 +74,19 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, 
 		return status, err
 	}
 	status.SubFiles.DirIndex = append(status.SubFiles.DirIndex,
+<<<<<<< HEAD
 		&pb.DirMetadata{
 			ApproxMetadata: &pb.FileApproxMetadata{
 				Name:   dir.Name,
 				DirId:  dir.Id.Hex(),
 				UserId: dir.UserId.Hex(),
+=======
+		&MaeSanta.DirMetadata{
+			ApproxMetadata: &MaeSanta.FileApproxMetadata{
+				Name:    dir.Name,
+				DirId: dir.Id.Hex(),
+				UserId:  dir.UserId.Hex(),
+>>>>>>> b69dc041435fac2675eca1cfebac41bf1ba3d99a
 			},
 			DirId: dir.Id.Hex()})
 	return status, nil

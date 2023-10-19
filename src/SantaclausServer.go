@@ -25,6 +25,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 	if r != nil {
 		return status, r
 	}
+<<<<<<< HEAD
 	dirId, r := primitive.ObjectIDFromHex(req.File.DirId)
 	if r != nil {
 		return status, r
@@ -40,9 +41,12 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 			FileId: fileFound.Id.Hex(),
 			DiskId: fileFound.DiskId.Hex()}
 		return nil, errors.New("File name already exists in this directory, aborting file creation")
+=======
+	dirId, err := primitive.ObjectIDFromHex(req.File.DirId)
+	if err != nil {
+		return status, err
+>>>>>>> b69dc041435fac2675eca1cfebac41bf1ba3d99a
 	}
-
-	// TODO find diskId
 
 	foundDisk, r := server.findAvailableDisk(ctx, req.FileSize, req.File.UserId)
 	// todo update disk size here ? or in other function ?
@@ -52,7 +56,11 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 	newFile := file{
 		Id:         primitive.NewObjectID(),
 		Name:       req.File.Name,
+<<<<<<< HEAD
 		DirId:      dirId, // TODO find dirId from dirpath
+=======
+		DirId:      dirId,
+>>>>>>> b69dc041435fac2675eca1cfebac41bf1ba3d99a
 		UserId:     userId,
 		Size:       req.FileSize,
 		DiskId:     foundDisk,
@@ -259,15 +267,24 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 		UserId:  fileFound.UserId.Hex()},
 	DiskId: fileFound.DiskId.Hex()} */
 
+<<<<<<< HEAD
 	status := &pb.GetFileStatus{
 		File: &pb.FileMetadata{
 			ApproxMetadata: &pb.FileApproxMetadata{
 				Name:   fileFound.Name,
 				DirId:  fileFound.DirId.Hex(),
 				UserId: fileFound.UserId.Hex()},
+=======
+	status := &MaeSanta.GetFileStatus{
+		File: &MaeSanta.FileMetadata{
+			ApproxMetadata: &MaeSanta.FileApproxMetadata{
+				Name:    fileFound.Name,
+				DirId: 	 fileFound.DirId.Hex(),
+				UserId:  fileFound.UserId.Hex()},
+>>>>>>> b69dc041435fac2675eca1cfebac41bf1ba3d99a
 			FileId:         fileFound.Id.Hex(),
 			DirId:          fileFound.DirId.Hex(),
-			IsDownloadable: fileFound.Downloadable,
+			State: 			MaeSanta.FileState_UNKNOWN,
 			LastEditorId:   primitive.NilObjectID.Hex(), // todo this field is useless
 			Creation:       timestamppb.New(fileFound.CreatedAt),
 			LastEdit:       timestamppb.New(fileFound.LastUpload),
@@ -333,13 +350,18 @@ func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.
 }
 
 // Directories
+func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *MaeSanta.AddDirectoryRequest) (status *MaeSanta.AddDirectoryStatus, r error) {
+	userId, err := primitive.ObjectIDFromHex(req.Directory.UserId)
+	if err != nil {
+		return nil, err
+	}
 
-func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.AddDirectoryRequest) (status *pb.AddDirectoryStatus, r error) {
-	log.Println("Request: AddDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	dirId, err := primitive.ObjectIDFromHex(req.Directory.DirId)
+	if err != nil {
+		return nil, err
+	}
 
-	// find parent ID from req.Directory.DirPath
-	userId, r := primitive.ObjectIDFromHex(req.Directory.UserId)
-
+	dir, r := server.createDir(ctx, userId, dirId, req.Directory.Name)
 	if r != nil {
 		return nil, r
 	}
