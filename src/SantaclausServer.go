@@ -196,16 +196,12 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	log.Println("Request: MoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
 
 	if req.DirId == nil && req.NewFileName == nil {
-		println("4")
-
 		return nil, errors.New("No new directory and file name, abortin file move")
 	}
 	// todo if nil object id for dirId, move to root dir ?
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
 	if r != nil {
-		println("3")
-
 		return status, r
 	}
 	/// Check if file of fileId exists
@@ -213,8 +209,6 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	var currentFile file
 	r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&currentFile)
 	if r != nil {
-		println("-2")
-
 		return status, r
 	}
 
@@ -226,7 +220,6 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		dirId, r := primitive.ObjectIDFromHex(req.GetDirId())
 
 		if r != nil {
-			println("-1")
 			return nil, r
 		}
 		// If dirId is incorrect, return error
@@ -234,34 +227,29 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		var dir directory
 		r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
 		if r != nil {
-			println("0")
 			return nil, r
 		}
 		// Check if file with this name exists in the new directory
 		filter = bson.D{bson.E{Key: "name", Value: currentFile.Name}, bson.E{Key: "dir_id", Value: dirId}}
 		r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&tmpFileFound)
 		if r == nil {
-			println("1")
 			return nil, errors.New("File with this name already exists in the new directory")
 		}
 		update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "dir_id", Value: dirId}}}}
 		res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 		if r != nil {
-			println("2")
 			return nil, r
 		}
 		if res.MatchedCount != 1 {
-			println("3")
 			return nil, errors.New("Could not find file to be updated")
 		}
 		if res.ModifiedCount != 1 {
-			println("4")
 			return nil, errors.New("Could not modify file directory")
 		}
 	}
 	// todo another function
 	if req.NewFileName != nil {
-		newFileName, r := primitive.ObjectIDFromHex(req.GetNewFileName())
+		newFileName := req.GetNewFileName()
 
 		if r != nil {
 			return nil, r
