@@ -56,7 +56,7 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 		metadata := &MaeSanta.FileMetadata{
 			ApproxMetadata: &MaeSanta.FileApproxMetadata{Name: file.Name, DirId: dirId.Hex(), UserId: file.UserId.Hex()},
 			FileId:         file.Id.Hex(),
-			IsDownloadable: false,             /* TODO change by real stored field */
+			State: 			MaeSanta.FileState_UNKNOWN,
 			LastEditorId:   file.UserId.Hex(), /* TODO ? */
 			Creation:       &timestamppb.Timestamp{Seconds: file.CreatedAt.Unix()},
 			LastEdit:       &timestamppb.Timestamp{Seconds: file.EditedAt.Unix()}}

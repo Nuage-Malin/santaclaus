@@ -236,7 +236,7 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *MaeSanta.G
 				UserId:  fileFound.UserId.Hex()},
 			FileId:         fileFound.Id.Hex(),
 			DirId:          fileFound.DirId.Hex(),
-			IsDownloadable: fileFound.Downloadable,
+			State: 			MaeSanta.FileState_UNKNOWN,
 			LastEditorId:   primitive.NilObjectID.Hex(), // todo this field is useless
 			Creation:       timestamppb.New(fileFound.CreatedAt),
 			LastEdit:       timestamppb.New(fileFound.LastUpload),
