@@ -276,7 +276,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	}
 	status = &pb.MoveFileStatus{}
 
-	return status, r
+	return status, nil
 }
 
 func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileStatus, error) {
@@ -514,7 +514,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 		return nil, errors.New("Could not modify file to be updated")
 	}
 	status = &pb.MoveDirectoryStatus{}
-	return status, r
+	return status, nil
 }
 
 /*
