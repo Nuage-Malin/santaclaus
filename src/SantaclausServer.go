@@ -235,6 +235,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 		if r == nil {
 			return nil, errors.New("File with this name already exists in the new directory")
 		}
+		filter = bson.D{bson.E{Key: "_id", Value: fileId}}
 		update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "dir_id", Value: dirId}}}}
 		res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 		if r != nil {
@@ -261,7 +262,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 			return nil, errors.New("File with this new name already exists, aborting move")
 		}
 
-		filter = bson.D{bson.E{Key: "_id", Value: currentFile.Id}}
+		filter = bson.D{bson.E{Key: "_id", Value: fileId}}
 		update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newFileName}}}}
 		res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 		if r != nil {
