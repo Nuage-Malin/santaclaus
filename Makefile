@@ -16,6 +16,7 @@ SRC		=	main.go \
 			SantaclausServer.go \
 			SantaclausServerInit.go \
 			SantaclausServerRemoveDirectory.go \
+			SantaclausServerMoveFile.go \
 			SantaclausServerStructs.go \
 			SantaclausServerUtilsDisks.go
 
