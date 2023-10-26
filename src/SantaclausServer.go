@@ -190,7 +190,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *MaeSanta.
 	// todo change the behaviour described above, cause problem for directories
 
 	filter = bson.D{{"_id", fileId}}
-	update := bson.D{{"$set", bson.D{{"name", req.NewFileName}, {"dir_id", dirId}}}}
+	update := bson.D{{"$set", bson.D{{"name", req.NewFileName}, {"dir_id", dirId}, {"updated_at", time.Now()}}}}
 	res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 	if r != nil {
 		return nil, r
@@ -440,9 +440,9 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeS
 			return nil, errors.New("Cannot store directory in its subdirectory")
 		}
 		if req.Name != nil {
-			update = bson.D{{"$set", bson.D{{"name", req.Name}, {"parent_id", newLocationDirId}}}}
+			update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 		} else {
-			update = bson.D{{"$set", bson.D{{"name", dir.Name}, {"parent_id", newLocationDirId}}}}
+			update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: dir.Name}, bson.E{Key: "parent_id", Value: newLocationDirId}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 		}
 	} else {
 		if req.Name == nil {
@@ -454,7 +454,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *MaeS
 			return nil, errors.New("Directory name already exists in this directory, aborting move")
 		}
 		// In order not to change the location, but only the name, in the parameter, specify the same dirId as actual and new dir
-		update = bson.D{{"$set", bson.D{{"name", req.Name}}}}
+		update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: *req.Name}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 	}
 
 	filter = bson.D{{"_id", dirId}}
