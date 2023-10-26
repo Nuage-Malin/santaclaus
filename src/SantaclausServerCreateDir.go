@@ -5,61 +5,60 @@ import (
 	"errors"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (server *SantaclausServerImpl) createDir(ctx context.Context, userId primitive.ObjectID, parentId primitive.ObjectID, name string) (dir directory, err error) {
-	// Check if directory already exists
+func (server *SantaclausServerImpl) createDir(ctx context.Context, userId primitive.ObjectID, parentId primitive.ObjectID, name string) (dir *directory, r error) {
 
-	var dirFound directory
-	err = server.mongoColls[DirectoriesCollName].FindOne(ctx,
-		bson.D{
-			bson.E{Key: "parent_id", Value: parentId},
-			bson.E{Key: "name", Value: name},
-			bson.E{Key: "user_id", Value: userId}}).Decode(&dirFound)
+	var tmpParentDir *directory
+	parendId := primitive.NilObjectID
 
-	if err == nil {
-		return dirFound, errors.New("Directory name already exists in this directory, aborting directory creation")
-	}
-	/* Check if parent dir exists */
+	/// Check if parent dir exists
 	if name == "/" {
+		// function called from createRootDir
 		// If creating root dir, do not check for parent
-	} else if parentId == primitive.NilObjectID { // nil object id means parent will be root
-		dirFound, err = server.checkRootDirExistence(ctx, userId)
-		if err != nil {
-			return dir, err
+	} else {
+		if parentId == primitive.NilObjectID { // nil object id means parent will be root
+			// function called from gRPC request
+			tmpParentDir, r = server.checkRootDirExistence(ctx, userId)
+			if r != nil {
+				return nil, r
+			}
+			parendId = tmpParentDir.Id
+		} else { // Parent is not root
+			tmpParentDir, r = server.GetDirFromId(ctx, parentId)
+			if r != nil {
+				return nil, r
+			}
+			parendId = tmpParentDir.Id
 		}
-	} else { // Parent is not root
-
-		err = server.mongoColls[DirectoriesCollName].FindOne(ctx,
-			bson.D{
-				bson.E{Key: "_id", Value: parentId},
-				bson.E{Key: "user_id", Value: userId}}).Decode(&dirFound)
-
-		if err != nil {
-			return dir, errors.New("Parent directory does not exist, aborting directory creation")
+		/// Check if directory name already exists in this directory
+		if server.CheckDirHasChild(ctx, parendId, name) {
+			return nil, errors.New("Directory with same name already exists in parent directory, aborting dir creation")
 		}
 	}
 
-	dir = directory{
+	dir = &directory{
 		Id:        primitive.NewObjectID(),
 		Name:      name,
 		UserId:    userId,
-		ParentId:  dirFound.Id,
+		ParentId:  parendId,
 		CreatedAt: time.Now(),
 		EditedAt:  time.Now(),
 		Deleted:   false}
-	insertRes, err := server.mongoColls[DirectoriesCollName].InsertOne(ctx, dir)
+	insertRes, r := server.mongoColls[DirectoriesCollName].InsertOne(ctx, dir)
 
-	if insertRes == nil || err != nil {
-		return dir, err
+	if insertRes == nil || r != nil {
+		if r == nil {
+			return nil, errors.New("Could not insert new directory")
+		}
+		return nil, r
 	}
 	dir.Id = insertRes.InsertedID.(primitive.ObjectID)
 	return dir, nil
 }
 
-func (server *SantaclausServerImpl) createRootDir(ctx context.Context, userId primitive.ObjectID) (directory, error) {
+func (server *SantaclausServerImpl) createRootDir(ctx context.Context, userId primitive.ObjectID) (*directory, error) {
 
 	return server.createDir(ctx, userId, primitive.NilObjectID, "/")
 }

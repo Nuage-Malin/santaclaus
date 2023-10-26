@@ -14,25 +14,25 @@ func (server *SantaclausServerImpl) getChildrenDirectories(ctx context.Context, 
 	/* find all children directories thanks to a request with their parent ID (which is the current dirId) */
 
 	var dirs []directory
-	filter := bson.D{primitive.E{Key: "parent_id", Value: dirId}, bson.E{Key: "deleted", Value: false}}
-	childDirIds, err := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
+	filter := bson.D{bson.E{Key: "parent_id", Value: dirId}, bson.E{Key: "deleted", Value: false}}
+	childDirIds, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter)
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return status, r
 	}
 
-	err = childDirIds.All(ctx, &dirs)
-	if err != nil {
-		return status, err
+	r = childDirIds.All(ctx, &dirs)
+	if r != nil {
+		return status, r
 	}
 	for _, dir := range dirs {
 		if recursive {
-			status, err = server.getOneDirectory(ctx, dir.Id, recursive, status)
+			status, r = server.getOneDirectory(ctx, dir.Id, recursive, status)
 		} else {
-			status, err = server.addOneDirectoryToIndex(ctx, dir.Id, status)
+			status, r = server.addOneDirectoryToIndex(ctx, dir.Id, status)
 		}
-		if err != nil {
-			return status, err
+		if r != nil {
+			return status, r
 		}
 	}
 	return status, nil
@@ -66,12 +66,10 @@ func (server *SantaclausServerImpl) addFilesToIndex(ctx context.Context, dirId p
 }
 
 func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, dirId primitive.ObjectID, status *pb.GetDirectoryStatus) (*pb.GetDirectoryStatus, error) {
-	var dir directory
-	filter := bson.D{bson.E{Key: "_id", Value: dirId}, bson.E{Key: "deleted", Value: false}} // get the directory if exists and not deleted
-	err := server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dir)
+	dir, r := server.GetDirFromId(ctx, dirId)
 
-	if err != nil {
-		return status, err
+	if r != nil {
+		return status, r
 	}
 	status.SubFiles.DirIndex = append(status.SubFiles.DirIndex,
 		&pb.DirMetadata{
@@ -111,3 +109,5 @@ func (server *SantaclausServerImpl) GetRootDirectory(ctx context.Context, recurs
 	}
 	return server.getOneDirectory(ctx, rootDir.Id, recursive, status)
 }
+
+// todo func to check if a dir exists and get it (as a directory var)

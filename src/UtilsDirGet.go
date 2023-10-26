@@ -17,8 +17,7 @@ func (server *SantaclausServerImpl) GetDirFromId(ctx context.Context, dirId prim
 	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound) == nil {
 		return &dirFound, nil
 	}
-	return nil, errors.New(fmt.Sprintf("Could not find directory $s", dirId.Hex()))
-
+	return nil, errors.New(fmt.Sprintf("Could not find directory %s", dirId.Hex()))
 }
 
 func (server *SantaclausServerImpl) GetDirFromStringId(ctx context.Context, strDirId string) (*directory, error) {
@@ -34,6 +33,7 @@ func (server *SantaclausServerImpl) GetDirFromStringId(ctx context.Context, strD
 	if server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&dirFound) == nil {
 		return &dirFound, nil
 	}
-	return nil, errors.New(fmt.Sprintf("Could not find directory $s", dirId))
-
+	return nil, errors.New(fmt.Sprintf("Could not find directory %s", dirId))
 }
+
+// todo test

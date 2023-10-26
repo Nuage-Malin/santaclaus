@@ -28,15 +28,17 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 		return nil, r
 	}
 
+	if dir.Id == newParentDir.Id {
+		return nil, errors.New("Cannot move directory to itself, aborting move")
+	}
+
 	// Check that newParentDir does not contain dir with same name as dir to be moved
 	if server.CheckDirHasChild(ctx, newParentDir.Id, dir.Name) {
 		return nil, errors.New(fmt.Sprintf("Directory with name '%s' already exists in parent directory %s, aborting move", dir.Name, newParentDir.Id.Hex()))
 	}
 
-	var update bson.D
-
 	filter := bson.D{bson.E{Key: "_id", Value: dir.Id}}
-	update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "parent_id", Value: newParentDir.Id}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "parent_id", Value: newParentDir.Id}}}}
 	res, r := server.mongoColls[DirectoriesCollName].UpdateOne(ctx, filter, update)
 
 	if r != nil {
@@ -72,10 +74,8 @@ func (server *SantaclausServerImpl) RenameDirectory(ctx context.Context, req *pb
 		return nil, errors.New(fmt.Sprintf("Directory with name '%s' already exists in parent directory %s, aborting rename", dir.Name, dir.Id.Hex()))
 	}
 
-	var update bson.D
-
 	filter := bson.D{bson.E{Key: "_id", Value: dir.Id}}
-	update = bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newDirName}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newDirName}}}}
 	res, r := server.mongoColls[DirectoriesCollName].UpdateOne(ctx, filter, update)
 
 	if r != nil {

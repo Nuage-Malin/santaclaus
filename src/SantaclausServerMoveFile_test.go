@@ -57,9 +57,8 @@ func TestMoveFileLocation(t *testing.T) {
 	}
 
 	request := pb.MoveFileRequest{
-		FileId:      createFileStatus.FileId,
-		NewFileName: &file.Name,
-		DirId:       &secondCreateDirStatus.DirId}
+		FileId:   createFileStatus.FileId,
+		NewDirId: secondCreateDirStatus.DirId}
 	_, err = server.MoveFile(ctx, &request)
 
 	if err != nil {
@@ -78,27 +77,27 @@ func TestMoveFileLocation(t *testing.T) {
 	}
 }
 
-func TestMoveFileName(t *testing.T) {
+func TestMoveFileToSameDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir pb.FileApproxMetadata
-	dir = pb.FileApproxMetadata{
+	var dir [2]pb.FileApproxMetadata
+	dir[0] = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
 		UserId: userId}
-	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir}
+	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir[0]}
 
 	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
-		t.Fatalf("Could not create directory %s : DirId is nil", dir.Name) // log and fail
+		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
 	}
 	var file pb.FileApproxMetadata
 	file = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
-		DirId:  dir.DirId,
+		DirId:  createDirStatus.DirId,
 		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
 	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
@@ -110,26 +109,13 @@ func TestMoveFileName(t *testing.T) {
 
 	}
 
-	newFileName := getUniqueName()
 	request := pb.MoveFileRequest{
-		FileId:      createFileStatus.FileId,
-		NewFileName: &newFileName,
-		DirId:       &createDirStatus.DirId}
+		FileId:   createFileStatus.FileId,
+		NewDirId: createDirStatus.DirId}
 	_, err = server.MoveFile(ctx, &request)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-	getFileRequest := pb.GetFileRequest{FileId: createFileStatus.FileId}
-	fileMoved, err := server.GetFile(ctx, &getFileRequest)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if fileMoved.File.ApproxMetadata.DirId != *request.DirId {
-		t.Fatalf("File path has not been moved properly, it is in %s, but should be in %s", fileMoved.File.ApproxMetadata.DirId, dir.DirId)
-	}
-	if fileMoved.File.ApproxMetadata.Name != *request.NewFileName {
-		t.Fatalf("File name has not been changed properly, it is %s, but should be %s", fileMoved.File.ApproxMetadata.Name, createFileRequest.File.Name)
+	if err == nil {
+		t.Fatal("Moved file to same directory when should've been an error")
 	}
 }
 
@@ -153,15 +139,13 @@ func TestMoveFileToFakeDirectory(t *testing.T) {
 
 	newDirId := primitive.NewObjectID().Hex()
 	request := pb.MoveFileRequest{
-		FileId:      createFileStatus.FileId,
-		NewFileName: &file.Name,
-		DirId:       &newDirId} // dir Id isn't in database as we create it now
+		FileId:   createFileStatus.FileId,
+		NewDirId: newDirId} // dir Id isn't in database as we create it now
 	_, err = server.MoveFile(ctx, &request)
 
 	if err == nil {
 		t.Fatalf("File moved to non existring directory, but error have not been returned")
 	}
-
 }
 
-// todo change both name and location
+// todo test rename !

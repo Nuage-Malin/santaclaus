@@ -46,30 +46,28 @@ func TestMoveDirectoryLocation(t *testing.T) {
 	}
 
 	request := pb.MoveDirectoryRequest{
-		DirId:            createDirStatus[0].DirId,
-		Name:             &dir[0].Name,
-		NewLocationDirId: &createDirStatus[1].DirId}
+		DirId:    createDirStatus[0].DirId,
+		NewDirId: createDirStatus[1].DirId}
 	_, err = server.MoveDirectory(ctx, &request)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	getDirReq := pb.GetDirectoryRequest{DirId: request.NewLocationDirId, UserId: userId, IsRecursive: false}
+	getDirReq := pb.GetDirectoryRequest{DirId: &request.NewDirId, UserId: userId, IsRecursive: false}
 	index, err := server.GetDirectory(ctx, &getDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, dir := range index.SubFiles.DirIndex {
 		if dir.DirId == request.DirId {
-			if dir.ApproxMetadata.DirId != createDirStatus[0].DirId {
+			if dir.ApproxMetadata.DirId != createDirStatus[0].DirId { // todo is it good ids ?
 				t.Fatalf("Directory path has not been moved properly, it is in %s, but should be in %s", dir.ApproxMetadata.DirId, createDirStatus[0].DirId)
 			}
-			// todo add parent ID check
 		}
 	}
 }
 
-func TestMoveDirectoryName(t *testing.T) {
+func TestMoveDirectoryToItself(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	var dir pb.FileApproxMetadata
@@ -87,27 +85,13 @@ func TestMoveDirectoryName(t *testing.T) {
 		t.Fatalf("Could not create directory %s : DirId is nil", dir.Name) // log and fail
 	}
 
-	moveDirName := getUniqueName()
 	request := pb.MoveDirectoryRequest{
-		DirId:            createDirStatus.DirId,
-		Name:             &moveDirName,
-		NewLocationDirId: &createDirStatus.DirId}
+		DirId:    createDirStatus.DirId,
+		NewDirId: createDirStatus.DirId}
 	_, err = server.MoveDirectory(ctx, &request)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-	getDirReq := pb.GetDirectoryRequest{DirId: &request.DirId, UserId: userId, IsRecursive: false}
-	index, err := server.GetDirectory(ctx, &getDirReq)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, dir := range index.SubFiles.DirIndex {
-		if dir.DirId == request.DirId {
-			if dir.ApproxMetadata.Name != *request.Name {
-				t.Fatalf("File name has not been changed properly, it is %s, but should be %s", dir.ApproxMetadata.Name, *request.Name)
-			}
-		}
+	if err == nil {
+		t.Fatal("Moved directory to itself when it should not be possible")
 	}
 }
 
@@ -133,9 +117,8 @@ func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 
 	newLocationDirId := primitive.NewObjectID().Hex()
 	request := pb.MoveDirectoryRequest{
-		DirId:            createDirStatus.DirId,
-		Name:             &dir.Name,
-		NewLocationDirId: &newLocationDirId}
+		DirId:    createDirStatus.DirId,
+		NewDirId: newLocationDirId}
 	_, err = server.MoveDirectory(ctx, &request)
 
 	if err == nil {
@@ -143,51 +126,110 @@ func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 	}
 }
 
-// todo change name to name that already exists
-// todo change both name and location
+// todo rename
 
-func TestMoveDirSameName(t *testing.T) {
+func TestRenameDir(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var dir [2]pb.FileApproxMetadata
-	var createDirReq [2]pb.AddDirectoryRequest
-	var createDirStatus [2]*pb.AddDirectoryStatus
+	var dir pb.FileApproxMetadata
+	dir = pb.FileApproxMetadata{
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
+	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
+
+	var createDirStatus *pb.AddDirectoryStatus
 	var err error
-	dir[0] = pb.FileApproxMetadata{
-		DirId:  primitive.NilObjectID.Hex(),
-		Name:   getUniqueName(),
-		UserId: userId}
-	createDirReq[0] = pb.AddDirectoryRequest{Directory: &dir[0]}
-	createDirStatus[0], err = server.AddDirectory(ctx, &createDirReq[0])
-
+	createDirStatus, err = server.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if createDirStatus[0].DirId == primitive.NilObjectID.Hex() {
-		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
+	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create directory %s : DirId is nil", dir.Name) // log and fail
 	}
-	dir[1] = pb.FileApproxMetadata{
+	request := pb.RenameDirectoryRequest{
+		DirId:      createDirStatus.DirId,
+		NewDirName: getUniqueName(),
+	}
+	_, err = server.RenameDirectory(ctx, &request)
+
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	dirFound, err := server.GetDirFromStringId(ctx, createDirStatus.DirId)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if dirFound.Name != request.NewDirName {
+		t.Fatalf("Directory has been wrongly renamed")
+	}
+}
+
+func TestRenameDirWhenNameAlreadyExists(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	var dir pb.FileApproxMetadata
+	dir = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
 		UserId: userId}
-	createDirReq[1] = pb.AddDirectoryRequest{Directory: &dir[1]}
+	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
-	createDirStatus[1], err = server.AddDirectory(ctx, &createDirReq[1])
+	var createDirStatus0 *pb.AddDirectoryStatus
+	var err error
+	createDirStatus0, err = server.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if createDirStatus[1].DirId == primitive.NilObjectID.Hex() {
-		t.Fatalf("Could not create directory %s : DirId is empty", dir[1].Name) // log and fail
+	if createDirStatus0.DirId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create directory %s : DirId is nil", dir.Name) // log and fail
 	}
-
-	request := pb.MoveDirectoryRequest{
-		DirId:            createDirStatus[0].DirId,
-		Name:             &createDirReq[1].Directory.Name,
-		NewLocationDirId: &createDirStatus[0].DirId}
-	_, err = server.MoveDirectory(ctx, &request)
+	dir.Name = getUniqueName()
+	var createDirStatus1 *pb.AddDirectoryStatus
+	createDirStatus1, err = server.AddDirectory(ctx, &createDirReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if createDirStatus1.DirId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create directory %s : DirId is nil", dir.Name) // log and fail
+	}
+	request := pb.RenameDirectoryRequest{
+		DirId:      createDirStatus0.DirId,
+		NewDirName: dir.Name,
+	}
+	_, err = server.RenameDirectory(ctx, &request)
 
 	if err == nil {
-		t.Fatalf("Should not be able to move directory to the same name as ")
+		t.Fatalf("Renamed directory without error when should've been one : rename with name already existing in this directory")
 	}
+}
 
+func TestRenameDirWithSameName(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	var dir pb.FileApproxMetadata
+	dir = pb.FileApproxMetadata{
+		DirId:  primitive.NilObjectID.Hex(),
+		Name:   getUniqueName(),
+		UserId: userId}
+	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
+
+	var createDirStatus *pb.AddDirectoryStatus
+	var err error
+	createDirStatus, err = server.AddDirectory(ctx, &createDirReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create directory %s : DirId is nil", dir.Name) // log and fail
+	}
+	request := pb.RenameDirectoryRequest{
+		DirId:      createDirStatus.DirId,
+		NewDirName: dir.Name,
+	}
+	_, err = server.RenameDirectory(ctx, &request)
+
+	if err == nil {
+		t.Fatalf("Renamed directory without error when should've been one : rename with same name")
+	}
 }
