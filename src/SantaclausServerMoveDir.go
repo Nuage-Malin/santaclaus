@@ -3,6 +3,7 @@ package main
 import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	"fmt"
+	"time"
 
 	"context"
 	"errors"
@@ -38,7 +39,7 @@ func (server *SantaclausServerImpl) MoveDirectory(ctx context.Context, req *pb.M
 	}
 
 	filter := bson.D{bson.E{Key: "_id", Value: dir.Id}}
-	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "parent_id", Value: newParentDir.Id}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "parent_id", Value: newParentDir.Id}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 	res, r := server.mongoColls[DirectoriesCollName].UpdateOne(ctx, filter, update)
 
 	if r != nil {
@@ -75,7 +76,7 @@ func (server *SantaclausServerImpl) RenameDirectory(ctx context.Context, req *pb
 	}
 
 	filter := bson.D{bson.E{Key: "_id", Value: dir.Id}}
-	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newDirName}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newDirName}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 	res, r := server.mongoColls[DirectoriesCollName].UpdateOne(ctx, filter, update)
 
 	if r != nil {

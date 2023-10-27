@@ -4,6 +4,7 @@ import (
 	pb "NuageMalin/Santaclaus/third_parties/protobuf-interfaces/generated"
 	"fmt"
 	"log"
+	"time"
 
 	"context"
 	"errors"
@@ -35,7 +36,7 @@ func (server *SantaclausServerImpl) MoveFile(ctx context.Context, req *pb.MoveFi
 	}
 
 	filter := bson.D{bson.E{Key: "_id", Value: file.Id}}
-	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "dir_id", Value: newDir.Id}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "dir_id", Value: newDir.Id}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 	res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 
 	if r != nil {
@@ -67,7 +68,7 @@ func (server *SantaclausServerImpl) RenameFile(ctx context.Context, req *pb.Rena
 	}
 
 	filter := bson.D{bson.E{Key: "_id", Value: file.Id}}
-	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newFileName}}}}
+	update := bson.D{bson.E{Key: "$set", Value: bson.D{bson.E{Key: "name", Value: newFileName}, bson.E{Key: "updated_at", Value: time.Now()}}}}
 	res, r := server.mongoColls[FilesCollName].UpdateOne(ctx, filter, update) // todo test updateById
 
 	if r != nil {
