@@ -78,7 +78,9 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, 
 				DirId:  dir.Id.Hex(),
 				UserId: dir.UserId.Hex(),
 			},
-			DirId: dir.Id.Hex()})
+			DirId: dir.Id.Hex(),
+			Creation: &timestamppb.Timestamp{Seconds: dir.CreatedAt.Unix()},
+			LastEdit: &timestamppb.Timestamp{Seconds: dir.EditedAt.Unix()}})
 	return status, nil
 }
 
