@@ -20,9 +20,9 @@ func TestMoveFileLocation(t *testing.T) {
 		UserId: userId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir[0]}
 
-	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
-	if err != nil {
-		t.Fatal(err)
+	createDirStatus, r := server.AddDirectory(ctx, &createDirrequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
@@ -33,9 +33,9 @@ func TestMoveFileLocation(t *testing.T) {
 		DirId:  createDirStatus.DirId,
 		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
-	if err != nil {
-		t.Fatal(err)
+	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if createFileStatus.FileId == primitive.NilObjectID.Hex() || createFileStatus.DiskId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
@@ -48,9 +48,9 @@ func TestMoveFileLocation(t *testing.T) {
 		UserId: userId}
 	createDirrequest = pb.AddDirectoryRequest{Directory: &dir[1]}
 
-	secondCreateDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
-	if err != nil {
-		t.Fatal(err)
+	secondCreateDirStatus, r := server.AddDirectory(ctx, &createDirrequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if secondCreateDirStatus.DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId is empty", dir[1].Name) // log and fail
@@ -59,15 +59,15 @@ func TestMoveFileLocation(t *testing.T) {
 	request := pb.MoveFileRequest{
 		FileId:   createFileStatus.FileId,
 		NewDirId: secondCreateDirStatus.DirId}
-	_, err = server.MoveFile(ctx, &request)
+	_, r = server.MoveFile(ctx, &request)
 
-	if err != nil {
-		t.Fatal(err)
+	if r != nil {
+		t.Fatal(r)
 	}
 	getFileRequest := pb.GetFileRequest{FileId: createFileStatus.FileId}
-	fileMoved, err := server.GetFile(ctx, &getFileRequest)
-	if err != nil {
-		t.Fatal(err)
+	fileMoved, r := server.GetFile(ctx, &getFileRequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if fileMoved.File.ApproxMetadata.DirId != dir[1].DirId {
 		t.Fatalf("File path has not been moved properly, it is in %s, but should be in %s", fileMoved.File.ApproxMetadata.DirId, dir[1].DirId)
@@ -87,9 +87,9 @@ func TestMoveFileToSameDirectory(t *testing.T) {
 		UserId: userId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir[0]}
 
-	createDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
-	if err != nil {
-		t.Fatal(err)
+	createDirStatus, r := server.AddDirectory(ctx, &createDirrequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if createDirStatus.DirId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create directory %s : DirId is nil", dir[0].Name) // log and fail
@@ -100,9 +100,9 @@ func TestMoveFileToSameDirectory(t *testing.T) {
 		DirId:  createDirStatus.DirId,
 		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
-	if err != nil {
-		t.Fatal(err)
+	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if createFileStatus.FileId == primitive.NilObjectID.Hex() || createFileStatus.DiskId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
@@ -112,40 +112,125 @@ func TestMoveFileToSameDirectory(t *testing.T) {
 	request := pb.MoveFileRequest{
 		FileId:   createFileStatus.FileId,
 		NewDirId: createDirStatus.DirId}
-	_, err = server.MoveFile(ctx, &request)
+	_, r = server.MoveFile(ctx, &request)
 
-	if err == nil {
-		t.Fatal("Moved file to same directory when should've been an error")
+	if r == nil {
+		t.Fatal("Moved file to same directory when should've been an ror")
 	}
 }
 
 func TestMoveFileToFakeDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	var file pb.FileApproxMetadata
-	file = pb.FileApproxMetadata{
+	file := pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
 		UserId: userId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
-	if err != nil {
-		t.Fatal(err)
+	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	if r != nil {
+		t.Fatal(r)
 	}
 	if createFileStatus.FileId == primitive.NilObjectID.Hex() || createFileStatus.DiskId == primitive.NilObjectID.Hex() {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
-
 	}
 
 	newDirId := primitive.NewObjectID().Hex()
 	request := pb.MoveFileRequest{
 		FileId:   createFileStatus.FileId,
 		NewDirId: newDirId} // dir Id isn't in database as we create it now
-	_, err = server.MoveFile(ctx, &request)
+	_, r = server.MoveFile(ctx, &request)
 
-	if err == nil {
-		t.Fatalf("File moved to non existring directory, but error have not been returned")
+	if r == nil {
+		t.Fatalf("File moved to non existring directory, but ror have not been returned")
 	}
 }
 
-// todo test rename !
+func TestRenameFile(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	file := pb.FileApproxMetadata{
+		Name:   getUniqueName(),
+		DirId:  primitive.NilObjectID.Hex(),
+		UserId: userId}
+	createFileRequest := pb.AddFileRequest{File: &file}
+	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+
+	if r != nil {
+		t.Fatal(r)
+	}
+	if createFileStatus.FileId == primitive.NilObjectID.Hex() || createFileStatus.DiskId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
+	}
+	renameFileRequest := pb.RenameFileRequest{FileId: createFileStatus.FileId, NewFileName: getUniqueName()}
+	_, r = server.RenameFile(ctx, &renameFileRequest)
+
+	if r != nil {
+		t.Fatal(r)
+	}
+	fileFound, r := server.GetFileFromStringId(ctx, createFileStatus.FileId)
+
+	if r != nil {
+		t.Fatal(r)
+	}
+	if fileFound.Name != renameFileRequest.NewFileName {
+		t.Fatalf("File renamed does not have the new file name")
+	}
+}
+
+func TestRenameFileToSameSame(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	file := pb.FileApproxMetadata{
+		Name:   getUniqueName(),
+		DirId:  primitive.NilObjectID.Hex(),
+		UserId: userId}
+	createFileRequest := pb.AddFileRequest{File: &file}
+	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+
+	if r != nil {
+		t.Fatal(r)
+	}
+	if createFileStatus.FileId == primitive.NilObjectID.Hex() || createFileStatus.DiskId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
+	}
+	renameFileRequest := pb.RenameFileRequest{FileId: createFileStatus.FileId, NewFileName: createFileRequest.File.Name}
+	_, r = server.RenameFile(ctx, &renameFileRequest)
+
+	if r == nil {
+		t.Fatal("File renamed with same name as current name")
+	}
+}
+
+func TestRenameFileToAlreadyExistingFilename(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	file := pb.FileApproxMetadata{
+		Name:   getUniqueName(),
+		DirId:  primitive.NilObjectID.Hex(),
+		UserId: userId}
+	createFileRequest := pb.AddFileRequest{File: &file}
+	createFileStatus0, r := server.AddFile(ctx, &createFileRequest)
+
+	if r != nil {
+		t.Fatal(r)
+	}
+	if createFileStatus0.FileId == primitive.NilObjectID.Hex() || createFileStatus0.DiskId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
+	}
+	file.Name = getUniqueName()
+	createFileStatus1, r := server.AddFile(ctx, &createFileRequest)
+
+	if r != nil {
+		t.Fatal(r)
+	}
+	if createFileStatus1.FileId == primitive.NilObjectID.Hex() || createFileStatus1.DiskId == primitive.NilObjectID.Hex() {
+		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
+	}
+	renameFileRequest := pb.RenameFileRequest{FileId: createFileStatus0.FileId, NewFileName: createFileRequest.File.Name}
+	_, r = server.RenameFile(ctx, &renameFileRequest)
+
+	if r == nil {
+		t.Fatal("File renamed with name of other file")
+	}
+}
