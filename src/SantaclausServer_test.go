@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var server *SantaclausServerImpl = NewSantaclausServerImpl()
-var userId string = primitive.NewObjectID().Hex()
+var TestServer *SantaclausServerImpl = NewSantaclausServerImpl()
+var TestUserId string = primitive.NewObjectID().Hex()
 
 func init() {
 	log.SetFlags( /* log.LstdFlags | */ log.Lshortfile) // eneable line printing with logs // TODO put somewhere else

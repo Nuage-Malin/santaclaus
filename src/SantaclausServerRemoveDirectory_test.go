@@ -27,9 +27,9 @@ func TestRemoveDirectory(t *testing.T) {
 		Directory: &pb.FileApproxMetadata{
 			Name:   getUniqueName(),
 			DirId:  primitive.NilObjectID.Hex(),
-			UserId: userId,
+			UserId: TestUserId,
 		}}
-	addDirStatus, err := server.AddDirectory(ctx, &addDirReq)
+	addDirStatus, err := TestServer.AddDirectory(ctx, &addDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,12 +40,12 @@ func TestRemoveDirectory(t *testing.T) {
 		file = pb.FileApproxMetadata{
 			DirId:  addDirStatus.DirId,
 			Name:   getUniqueName(),
-			UserId: userId}
+			UserId: TestUserId}
 
 		addFileRequest := pb.AddFileRequest{
 			File:     &file,
 			FileSize: fileSize}
-		addFileStatuses[i], err = server.AddFile(ctx, &addFileRequest)
+		addFileStatuses[i], err = TestServer.AddFile(ctx, &addFileRequest)
 		if err != nil {
 			t.Fatalf(err.Error())
 		}
@@ -54,14 +54,14 @@ func TestRemoveDirectory(t *testing.T) {
 		}
 	}
 	request := pb.RemoveDirectoryRequest{DirId: addDirStatus.DirId}
-	_, err = server.RemoveDirectory(ctx, &request)
+	_, err = TestServer.RemoveDirectory(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure
 	// todo maybe use the server to query into the database and check if the directory has been removed
-	getDirReq := pb.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId}
-	getDirStatus, err := server.GetDirectory(ctx, &getDirReq)
+	getDirReq := pb.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: TestUserId}
+	getDirStatus, err := TestServer.GetDirectory(ctx, &getDirReq)
 	if err != nil {
 		if err.Error() != "mongo: no documents in result" {
 			t.Fatal(err)

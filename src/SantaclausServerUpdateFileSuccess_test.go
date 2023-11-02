@@ -20,13 +20,13 @@ func TestUpdateFileSuccess(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64
 
 	addFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	addFileStatus, err := server.AddFile(ctx, &addFileRequest)
+	addFileStatus, err := TestServer.AddFile(ctx, &addFileRequest)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -37,7 +37,7 @@ func TestUpdateFileSuccess(t *testing.T) {
 	request := pb.UpdateFileSuccessRequest{
 		FileId:      addFileStatus.FileId,
 		NewFileSize: fileSize}
-	_, err = server.UpdateFileSuccess(ctx, &request)
+	_, err = TestServer.UpdateFileSuccess(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

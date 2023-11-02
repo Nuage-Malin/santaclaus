@@ -23,10 +23,10 @@ func TestCreateDirectory(t *testing.T) {
 	dir := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var request = pb.AddDirectoryRequest{Directory: &dir}
 
-	status, err := server.AddDirectory(ctx, &request)
+	status, err := TestServer.AddDirectory(ctx, &request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,11 +45,11 @@ func TestCreateSubDirectoryTwice(t *testing.T) {
 	dir := pb.FileApproxMetadata{
 		DirId:  directoryIds[1],
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var request = pb.AddDirectoryRequest{Directory: &dir}
 	var dirId string
 
-	status, err := server.AddDirectory(ctx, &request)
+	status, err := TestServer.AddDirectory(ctx, &request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestCreateSubDirectoryTwice(t *testing.T) {
 	}
 	directoryIds[2] = dirId
 
-	status, err = server.AddDirectory(ctx, &request)
+	status, err = TestServer.AddDirectory(ctx, &request)
 	if err == nil {
 		t.Fatalf("Error: directory was created twice without error") // log and fail
 	}
@@ -74,10 +74,10 @@ func TestCreateSubDirectorySameSubName(t *testing.T) {
 	dir := pb.FileApproxMetadata{
 		DirId:  directoryIds[3],
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var request = pb.AddDirectoryRequest{Directory: &dir}
 
-	status, err := server.AddDirectory(ctx, &request)
+	status, err := TestServer.AddDirectory(ctx, &request)
 	if err != nil {
 		t.Fatal(err)
 	}

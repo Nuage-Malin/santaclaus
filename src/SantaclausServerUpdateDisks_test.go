@@ -14,7 +14,7 @@ import (
 func TestUpdateDisks(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	r := server.updateDiskBase(ctx)
+	r := TestServer.updateDiskBase(ctx)
 
 	if r == nil { // updateDiskBase fails because Bugle is not conected
 		t.Fatalf("updateDiskBase should not work if Bugle is not launched")

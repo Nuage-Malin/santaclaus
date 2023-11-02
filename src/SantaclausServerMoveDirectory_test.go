@@ -17,13 +17,13 @@ func TestMoveDirectoryLocation(t *testing.T) {
 	dir[0] = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 
 	createDirReq := pb.AddDirectoryRequest{Directory: &dir[0]}
 
 	var createDirStatus [2]*pb.AddDirectoryStatus
 	var err error
-	createDirStatus[0], err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus[0], err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,10 +34,10 @@ func TestMoveDirectoryLocation(t *testing.T) {
 	dir[1] = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirReq = pb.AddDirectoryRequest{Directory: &dir[1]}
 
-	createDirStatus[1], err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus[1], err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,13 +48,13 @@ func TestMoveDirectoryLocation(t *testing.T) {
 	request := pb.MoveDirectoryRequest{
 		DirId:    createDirStatus[0].DirId,
 		NewDirId: createDirStatus[1].DirId}
-	_, err = server.MoveDirectory(ctx, &request)
+	_, err = TestServer.MoveDirectory(ctx, &request)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	getDirReq := pb.GetDirectoryRequest{DirId: &request.NewDirId, UserId: userId, IsRecursive: false}
-	index, err := server.GetDirectory(ctx, &getDirReq)
+	getDirReq := pb.GetDirectoryRequest{DirId: &request.NewDirId, UserId: TestUserId, IsRecursive: false}
+	index, err := TestServer.GetDirectory(ctx, &getDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,10 +74,10 @@ func TestMoveDirectoryToItself(t *testing.T) {
 	dir = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
-	createDirStatus, err := server.AddDirectory(ctx, &createDirReq)
+	createDirStatus, err := TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestMoveDirectoryToItself(t *testing.T) {
 	request := pb.MoveDirectoryRequest{
 		DirId:    createDirStatus.DirId,
 		NewDirId: createDirStatus.DirId}
-	_, err = server.MoveDirectory(ctx, &request)
+	_, err = TestServer.MoveDirectory(ctx, &request)
 
 	if err == nil {
 		t.Fatal("Moved directory to itself when it should not be possible")
@@ -102,12 +102,12 @@ func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 	dir = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
 	var createDirStatus *pb.AddDirectoryStatus
 	var err error
-	createDirStatus, err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus, err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestMoveDirectoryToFakeDirectory(t *testing.T) {
 	request := pb.MoveDirectoryRequest{
 		DirId:    createDirStatus.DirId,
 		NewDirId: newLocationDirId}
-	_, err = server.MoveDirectory(ctx, &request)
+	_, err = TestServer.MoveDirectory(ctx, &request)
 
 	if err == nil {
 		t.Fatalf("Moved directory to fake directory without returning an error")
@@ -135,12 +135,12 @@ func TestRenameDir(t *testing.T) {
 	dir = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
 	var createDirStatus *pb.AddDirectoryStatus
 	var err error
-	createDirStatus, err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus, err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,12 +151,12 @@ func TestRenameDir(t *testing.T) {
 		DirId:      createDirStatus.DirId,
 		NewDirName: getUniqueName(),
 	}
-	_, err = server.RenameDirectory(ctx, &request)
+	_, err = TestServer.RenameDirectory(ctx, &request)
 
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	dirFound, err := server.GetDirFromStringId(ctx, createDirStatus.DirId)
+	dirFound, err := TestServer.GetDirFromStringId(ctx, createDirStatus.DirId)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -172,12 +172,12 @@ func TestRenameDirWhenNameAlreadyExists(t *testing.T) {
 	dir = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
 	var createDirStatus0 *pb.AddDirectoryStatus
 	var err error
-	createDirStatus0, err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus0, err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,7 +186,7 @@ func TestRenameDirWhenNameAlreadyExists(t *testing.T) {
 	}
 	dir.Name = getUniqueName()
 	var createDirStatus1 *pb.AddDirectoryStatus
-	createDirStatus1, err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus1, err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestRenameDirWhenNameAlreadyExists(t *testing.T) {
 		DirId:      createDirStatus0.DirId,
 		NewDirName: dir.Name,
 	}
-	_, err = server.RenameDirectory(ctx, &request)
+	_, err = TestServer.RenameDirectory(ctx, &request)
 
 	if err == nil {
 		t.Fatalf("Renamed directory without error when should've been one : rename with name already existing in this directory")
@@ -211,12 +211,12 @@ func TestRenameDirWithSameName(t *testing.T) {
 	dir = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirReq := pb.AddDirectoryRequest{Directory: &dir}
 
 	var createDirStatus *pb.AddDirectoryStatus
 	var err error
-	createDirStatus, err = server.AddDirectory(ctx, &createDirReq)
+	createDirStatus, err = TestServer.AddDirectory(ctx, &createDirReq)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +227,7 @@ func TestRenameDirWithSameName(t *testing.T) {
 		DirId:      createDirStatus.DirId,
 		NewDirName: dir.Name,
 	}
-	_, err = server.RenameDirectory(ctx, &request)
+	_, err = TestServer.RenameDirectory(ctx, &request)
 
 	if err == nil {
 		t.Fatalf("Renamed directory without error when should've been one : rename with same name")

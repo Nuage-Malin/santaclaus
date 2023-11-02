@@ -17,10 +17,10 @@ func TestMoveFileLocation(t *testing.T) {
 	dir[0] = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir[0]}
 
-	createDirStatus, r := server.AddDirectory(ctx, &createDirrequest)
+	createDirStatus, r := TestServer.AddDirectory(ctx, &createDirrequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -31,9 +31,9 @@ func TestMoveFileLocation(t *testing.T) {
 	file = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  createDirStatus.DirId,
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, r := TestServer.AddFile(ctx, &createFileRequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -45,10 +45,10 @@ func TestMoveFileLocation(t *testing.T) {
 	dir[1] = pb.FileApproxMetadata{
 		DirId:  createDirStatus.DirId,
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	createDirrequest = pb.AddDirectoryRequest{Directory: &dir[1]}
 
-	secondCreateDirStatus, r := server.AddDirectory(ctx, &createDirrequest)
+	secondCreateDirStatus, r := TestServer.AddDirectory(ctx, &createDirrequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -59,13 +59,13 @@ func TestMoveFileLocation(t *testing.T) {
 	request := pb.MoveFileRequest{
 		FileId:   createFileStatus.FileId,
 		NewDirId: secondCreateDirStatus.DirId}
-	_, r = server.MoveFile(ctx, &request)
+	_, r = TestServer.MoveFile(ctx, &request)
 
 	if r != nil {
 		t.Fatal(r)
 	}
 	getFileRequest := pb.GetFileRequest{FileId: createFileStatus.FileId}
-	fileMoved, r := server.GetFile(ctx, &getFileRequest)
+	fileMoved, r := TestServer.GetFile(ctx, &getFileRequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -84,10 +84,10 @@ func TestMoveFileToSameDirectory(t *testing.T) {
 	dir[0] = pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir[0]}
 
-	createDirStatus, r := server.AddDirectory(ctx, &createDirrequest)
+	createDirStatus, r := TestServer.AddDirectory(ctx, &createDirrequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -98,9 +98,9 @@ func TestMoveFileToSameDirectory(t *testing.T) {
 	file = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  createDirStatus.DirId,
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, r := TestServer.AddFile(ctx, &createFileRequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -112,7 +112,7 @@ func TestMoveFileToSameDirectory(t *testing.T) {
 	request := pb.MoveFileRequest{
 		FileId:   createFileStatus.FileId,
 		NewDirId: createDirStatus.DirId}
-	_, r = server.MoveFile(ctx, &request)
+	_, r = TestServer.MoveFile(ctx, &request)
 
 	if r == nil {
 		t.Fatal("Moved file to same directory when should've been an ror")
@@ -125,9 +125,9 @@ func TestMoveFileToFakeDirectory(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, r := TestServer.AddFile(ctx, &createFileRequest)
 	if r != nil {
 		t.Fatal(r)
 	}
@@ -139,7 +139,7 @@ func TestMoveFileToFakeDirectory(t *testing.T) {
 	request := pb.MoveFileRequest{
 		FileId:   createFileStatus.FileId,
 		NewDirId: newDirId} // dir Id isn't in database as we create it now
-	_, r = server.MoveFile(ctx, &request)
+	_, r = TestServer.MoveFile(ctx, &request)
 
 	if r == nil {
 		t.Fatalf("File moved to non existring directory, but ror have not been returned")
@@ -152,9 +152,9 @@ func TestRenameFile(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, r := TestServer.AddFile(ctx, &createFileRequest)
 
 	if r != nil {
 		t.Fatal(r)
@@ -163,12 +163,12 @@ func TestRenameFile(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 	renameFileRequest := pb.RenameFileRequest{FileId: createFileStatus.FileId, NewFileName: getUniqueName()}
-	_, r = server.RenameFile(ctx, &renameFileRequest)
+	_, r = TestServer.RenameFile(ctx, &renameFileRequest)
 
 	if r != nil {
 		t.Fatal(r)
 	}
-	fileFound, r := server.GetFileFromStringId(ctx, createFileStatus.FileId)
+	fileFound, r := TestServer.GetFileFromStringId(ctx, createFileStatus.FileId)
 
 	if r != nil {
 		t.Fatal(r)
@@ -184,9 +184,9 @@ func TestRenameFileToSameSame(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, r := TestServer.AddFile(ctx, &createFileRequest)
 
 	if r != nil {
 		t.Fatal(r)
@@ -195,7 +195,7 @@ func TestRenameFileToSameSame(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 	renameFileRequest := pb.RenameFileRequest{FileId: createFileStatus.FileId, NewFileName: createFileRequest.File.Name}
-	_, r = server.RenameFile(ctx, &renameFileRequest)
+	_, r = TestServer.RenameFile(ctx, &renameFileRequest)
 
 	if r == nil {
 		t.Fatal("File renamed with same name as current name")
@@ -208,9 +208,9 @@ func TestRenameFileToAlreadyExistingFilename(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file}
-	createFileStatus0, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus0, r := TestServer.AddFile(ctx, &createFileRequest)
 
 	if r != nil {
 		t.Fatal(r)
@@ -219,7 +219,7 @@ func TestRenameFileToAlreadyExistingFilename(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 	file.Name = getUniqueName()
-	createFileStatus1, r := server.AddFile(ctx, &createFileRequest)
+	createFileStatus1, r := TestServer.AddFile(ctx, &createFileRequest)
 
 	if r != nil {
 		t.Fatal(r)
@@ -228,7 +228,7 @@ func TestRenameFileToAlreadyExistingFilename(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 	renameFileRequest := pb.RenameFileRequest{FileId: createFileStatus0.FileId, NewFileName: createFileRequest.File.Name}
-	_, r = server.RenameFile(ctx, &renameFileRequest)
+	_, r = TestServer.RenameFile(ctx, &renameFileRequest)
 
 	if r == nil {
 		t.Fatal("File renamed with name of other file")

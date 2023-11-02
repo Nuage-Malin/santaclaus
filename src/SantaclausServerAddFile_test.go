@@ -20,13 +20,13 @@ func TestAddFile(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64 = 1
 
 	request := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	status, err := server.AddFile(ctx, &request)
+	status, err := TestServer.AddFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -41,13 +41,13 @@ func TestAddFileSameUser(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64 = 1
 
 	request := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	status, err := server.AddFile(ctx, &request)
+	status, err := TestServer.AddFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

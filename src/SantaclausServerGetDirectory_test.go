@@ -18,10 +18,10 @@ func TestGetDirectory(t *testing.T) {
 	dir := pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
-		UserId: userId}
+		UserId: TestUserId}
 	var createDirrequest = pb.AddDirectoryRequest{Directory: &dir}
 
-	addDirStatus, err := server.AddDirectory(ctx, &createDirrequest)
+	addDirStatus, err := TestServer.AddDirectory(ctx, &createDirrequest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,13 +31,13 @@ func TestGetDirectory(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64
 
 	createFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, err := TestServer.AddFile(ctx, &createFileRequest)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -45,8 +45,8 @@ func TestGetDirectory(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file.Name)
 	}
 
-	request := pb.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: userId, IsRecursive: true}
-	status, err := server.GetDirectory(ctx, &request)
+	request := pb.GetDirectoryRequest{DirId: &addDirStatus.DirId, UserId: TestUserId, IsRecursive: true}
+	status, err := TestServer.GetDirectory(ctx, &request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,12 +85,12 @@ func TestGetSubDirectories(t *testing.T) {
 	dir[0] = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  primitive.NilObjectID.Hex(),
-		UserId: userId}
+		UserId: TestUserId}
 	var createDirRequest [2]pb.AddDirectoryRequest
 	createDirRequest[0] = pb.AddDirectoryRequest{Directory: &dir[0]}
 	var addDirStatus [2]*pb.AddDirectoryStatus
 	var err error
-	addDirStatus[0], err = server.AddDirectory(ctx, &createDirRequest[0])
+	addDirStatus[0], err = TestServer.AddDirectory(ctx, &createDirRequest[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,9 +101,9 @@ func TestGetSubDirectories(t *testing.T) {
 	file[0] = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  addDirStatus[0].DirId,
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest := pb.AddFileRequest{File: &file[0]}
-	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, err := TestServer.AddFile(ctx, &createFileRequest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,10 +115,10 @@ func TestGetSubDirectories(t *testing.T) {
 	dir[1] = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  addDirStatus[0].DirId,
-		UserId: userId}
+		UserId: TestUserId}
 	createDirRequest[1] = pb.AddDirectoryRequest{Directory: &dir[1]}
 
-	addDirStatus[1], err = server.AddDirectory(ctx, &createDirRequest[1])
+	addDirStatus[1], err = TestServer.AddDirectory(ctx, &createDirRequest[1])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,9 +128,9 @@ func TestGetSubDirectories(t *testing.T) {
 	file[1] = pb.FileApproxMetadata{
 		Name:   getUniqueName(),
 		DirId:  addDirStatus[1].DirId,
-		UserId: userId}
+		UserId: TestUserId}
 	createFileRequest = pb.AddFileRequest{File: &file[1]}
-	createFileStatus, err = server.AddFile(ctx, &createFileRequest)
+	createFileStatus, err = TestServer.AddFile(ctx, &createFileRequest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,8 +138,8 @@ func TestGetSubDirectories(t *testing.T) {
 		t.Fatalf("Could not create file '%s' : diskId or FileId is nil", file[1].Name)
 	}
 
-	request := pb.GetDirectoryRequest{DirId: &addDirStatus[0].DirId, UserId: userId, IsRecursive: true}
-	status, err := server.GetDirectory(ctx, &request)
+	request := pb.GetDirectoryRequest{DirId: &addDirStatus[0].DirId, UserId: TestUserId, IsRecursive: true}
+	status, err := TestServer.GetDirectory(ctx, &request)
 
 	if err != nil {
 		t.Fatal(err)
@@ -168,8 +168,8 @@ func TestGetSubDirectories(t *testing.T) {
 func TestGetRootDirectory(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
-	request := pb.GetDirectoryRequest{DirId: nil, UserId: userId, IsRecursive: true}
-	status, err := server.GetDirectory(ctx, &request)
+	request := pb.GetDirectoryRequest{DirId: nil, UserId: TestUserId, IsRecursive: true}
+	status, err := TestServer.GetDirectory(ctx, &request)
 
 	if err != nil {
 		t.Fatal(err)

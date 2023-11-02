@@ -18,7 +18,7 @@ import (
 // Files
 
 func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFileRequest) (status *pb.AddFileStatus, r error) {
-	log.Println("Request: AddFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: AddFile") // todo replace with class request logger
 
 	userId, r := primitive.ObjectIDFromHex(req.File.UserId)
 
@@ -78,7 +78,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 }
 
 func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
-	log.Println("Request: VirtualRemoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: VirtualRemoveFile") // todo replace with class request logger
 
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
@@ -106,7 +106,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFile(ctx context.Context, req *
 }
 
 func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
-	log.Println("Request: VirtualRemoveFiles" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: VirtualRemoveFiles") // todo replace with class request logger
 
 	var fileId primitive.ObjectID
 	var tmpErr error
@@ -141,7 +141,7 @@ func (server *SantaclausServerImpl) VirtualRemoveFiles(ctx context.Context, req 
 }
 
 func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req *pb.RemoveFileRequest) (status *pb.RemoveFileStatus, r error) {
-	log.Println("Request: PhysicalRemoveFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: PhysicalRemoveFile") // todo replace with class request logger
 
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
@@ -162,7 +162,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFile(ctx context.Context, req 
 }
 
 func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req *pb.RemoveFilesRequest) (status *pb.RemoveFilesStatus, r error) {
-	log.Println("Request: VirtualRemoveFiles" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: VirtualRemoveFiles") // todo replace with class request logger
 
 	var fileId primitive.ObjectID
 	var tmpErr error
@@ -192,7 +192,7 @@ func (server *SantaclausServerImpl) PhysicalRemoveFiles(ctx context.Context, req
 }
 
 func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileStatus, error) {
-	log.Println("Request: GetFile" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: GetFile") // todo replace with class request logger
 
 	var fileFound file
 	fileId, r := primitive.ObjectIDFromHex(req.FileId)
@@ -200,19 +200,11 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 	if r != nil {
 		return nil, r
 	}
-	// filter := bson.D{bson.E{Key: "_id", Value: fileId}}
 	filter := bson.D{bson.E{Key: "_id", Value: fileId}}
 	r = server.mongoColls[FilesCollName].FindOne(ctx, filter).Decode(&fileFound)
 	if r != nil {
 		return nil, r
 	}
-
-	/* status := &pb.GetFileStatus{
-	File: &pb.FileApproxMetadata{
-		Name:    fileFound.Name,
-		DirPath: server.findPathFromDir(fileFound.DirId),
-		UserId:  fileFound.UserId.Hex()},
-	DiskId: fileFound.DiskId.Hex()} */
 
 	status := &pb.GetFileStatus{
 		File: &pb.FileMetadata{
@@ -228,15 +220,11 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 			LastEdit:     timestamppb.New(fileFound.LastUpload),
 		},
 		DiskId: fileFound.DiskId.Hex()}
-	// todo think about this :
-	// in the case of using fileMetadata instead of approxMetadata, but I don't think it is usefull
-	// because this procedure should only be called when trying to download a file
-	// but then how do we know the file is downloadable ??
 	return status, nil
 }
 
 func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *pb.UpdateFileSuccessRequest) (status *pb.UpdateFileSuccessStatus, r error) {
-	log.Println("Request: UpdateFileSuccess" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: UpdateFileSuccess") // todo replace with class request logger
 
 	fileId, r := primitive.ObjectIDFromHex(req.GetFileId())
 
@@ -266,7 +254,7 @@ func (server *SantaclausServerImpl) UpdateFileSuccess(ctx context.Context, req *
 // Disks
 
 func (server *SantaclausServerImpl) ChangeFileDisk(ctx context.Context, req *pb.ChangeFileDiskRequest) (status *pb.ChangeFileDiskStatus, r error) {
-	log.Println("Request: ChangeFileDisk" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: ChangeFileDisk") // todo replace with class request logger
 
 	filter := bson.D{bson.E{Key: "_id", Value: req.GetFileId()}}
 	// find the file in order not to put it on the same disk as it is already
@@ -308,7 +296,7 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 }
 
 func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb.RemoveDirectoryRequest) (status *pb.RemoveDirectoryStatus, r error) {
-	log.Println("Request: RemoveDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: RemoveDirectory") // todo replace with class request logger
 
 	//	find all subdirectories recursively
 	//	in each subdirectory, add fileIds to the status (fileIdsToRemove)
@@ -347,7 +335,7 @@ func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb
  * If dirId is nil, return root directory
  */
 func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *pb.GetDirectoryRequest) (status *pb.GetDirectoryStatus, r error) {
-	log.Println("Request: GetDirectory" /* todo try to get function name from variable or macro */) // todo replace with class request logger
+	log.Println("Request: GetDirectory") // todo replace with class request logger
 
 	userId, r := primitive.ObjectIDFromHex(req.UserId)
 
@@ -375,43 +363,4 @@ func (server *SantaclausServerImpl) GetDirectory(ctx context.Context, req *pb.Ge
 	} else {
 		return server.getOneDirectory(ctx, dirId, req.IsRecursive, status)
 	}
-}
-
-// Users
-
-func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.RemoveUserRequest) (status *pb.RemoveDirectoryStatus, r error) {
-	log.Println("Request: RemoveUser" /* todo try to get function name from variable or macro */) // todo replace with class request logger
-
-	userId, r := primitive.ObjectIDFromHex(req.UserId)
-
-	// directories
-	filter := bson.D{bson.E{Key: "user_id", Value: userId}}
-	findRes, r := server.mongoColls[DirectoriesCollName].Find(ctx, filter) /* todo do the same for files ? */
-	var dirs []directory
-
-	if r != nil {
-		return status, r
-	}
-	r = findRes.All(ctx, &dirs)
-	if r != nil {
-		return status, r
-	}
-	var filesToRemove pb.RemoveFilesRequest
-	// var removeDirStatus pb.RemoveDirectoryStatus
-	for _, dir := range dirs {
-		removeDirStatus, r := server.RemoveDirectory(ctx, &pb.RemoveDirectoryRequest{DirId: dir.Id.String() /* todo use other method to convert to string ? */})
-		if r != nil {
-			log.Print(r)
-			// Will print when removing sub directory of an already deleted directory, not a big problem but have to have it in mind when reading logs
-		}
-		for _, fileId := range removeDirStatus.FileIdsToRemove {
-			filesToRemove.FileIds = append(filesToRemove.FileIds, fileId)
-			status.FileIdsToRemove = append(status.FileIdsToRemove, fileId)
-		}
-	}
-	//
-	// files
-	server.VirtualRemoveFiles(ctx, &filesToRemove)
-	//
-	return status, nil
 }

@@ -18,13 +18,13 @@ func TestGetFile(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64
 
 	createFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	createFileStatus, err := server.AddFile(ctx, &createFileRequest)
+	createFileStatus, err := TestServer.AddFile(ctx, &createFileRequest)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -33,7 +33,7 @@ func TestGetFile(t *testing.T) {
 	}
 
 	request := pb.GetFileRequest{FileId: createFileStatus.FileId}
-	status, err := server.GetFile(ctx, &request)
+	status, err := TestServer.GetFile(ctx, &request)
 
 	if err != nil {
 		t.Fatal(err)

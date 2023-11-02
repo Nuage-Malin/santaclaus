@@ -20,13 +20,13 @@ func TestVirtualRemoveFile(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64
 
 	addFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	addFileStatus, err := server.AddFile(ctx, &addFileRequest)
+	addFileStatus, err := TestServer.AddFile(ctx, &addFileRequest)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -35,15 +35,15 @@ func TestVirtualRemoveFile(t *testing.T) {
 	}
 
 	request := pb.RemoveFileRequest{FileId: addFileStatus.FileId}
-	_, err = server.VirtualRemoveFile(ctx, &request)
+	_, err = TestServer.VirtualRemoveFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure to check the file
 	// todo maybe use the server to query into the database and check if the file has the 'removed' field set
 	getDirRequest := pb.GetDirectoryRequest{
-		DirId: nil, UserId: userId, IsRecursive: true}
-	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
+		DirId: nil, UserId: TestUserId, IsRecursive: true}
+	getDirStatus, err := TestServer.GetDirectory(ctx, &getDirRequest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,13 +61,13 @@ func TestPhysicalRemoveFile(t *testing.T) {
 	file := pb.FileApproxMetadata{
 		DirId:  primitive.NilObjectID.Hex(),
 		Name:   getUniqueName(),
-		UserId: userId}
+		UserId: TestUserId}
 	var fileSize uint64
 
 	addFileRequest := pb.AddFileRequest{
 		File:     &file,
 		FileSize: fileSize}
-	addFileStatus, err := server.AddFile(ctx, &addFileRequest)
+	addFileStatus, err := TestServer.AddFile(ctx, &addFileRequest)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -76,20 +76,20 @@ func TestPhysicalRemoveFile(t *testing.T) {
 	}
 
 	request := pb.RemoveFileRequest{FileId: addFileStatus.FileId}
-	_, err = server.VirtualRemoveFile(ctx, &request)
+	_, err = TestServer.VirtualRemoveFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure
 
-	_, err = server.PhysicalRemoveFile(ctx, &request)
+	_, err = TestServer.PhysicalRemoveFile(ctx, &request)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	// todo do getFile procedure
 	getDirRequest := pb.GetDirectoryRequest{
-		DirId: nil, UserId: userId, IsRecursive: true}
-	getDirStatus, err := server.GetDirectory(ctx, &getDirRequest)
+		DirId: nil, UserId: TestUserId, IsRecursive: true}
+	getDirStatus, err := TestServer.GetDirectory(ctx, &getDirRequest)
 	if err != nil {
 		t.Fatal(err)
 	}
