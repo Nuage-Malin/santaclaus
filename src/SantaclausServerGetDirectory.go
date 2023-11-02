@@ -75,7 +75,7 @@ func (server *SantaclausServerImpl) addOneDirectoryToIndex(ctx context.Context, 
 		&pb.DirMetadata{
 			ApproxMetadata: &pb.FileApproxMetadata{
 				Name:   dir.Name,
-				DirId:  dir.Id.Hex(),
+				DirId:  dir.ParentId.Hex(),
 				UserId: dir.UserId.Hex(),
 			},
 			DirId:    dir.Id.Hex(),
