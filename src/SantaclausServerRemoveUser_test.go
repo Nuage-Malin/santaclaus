@@ -161,7 +161,7 @@ func TestRemoveUserWithNoFilesNorDirectories(t *testing.T) {
 		t.Fatalf("Dir creation returned nil DirId")
 	}
 
-	rmDirRequest := pb.RemoveDirectoryRequest{DirId: addDirRequest.String()}
+	rmDirRequest := pb.RemoveDirectoryRequest{DirId: addDirStatus.DirId}
 	_, r = TestServer.RemoveDirectory(ctx, &rmDirRequest)
 
 	if r != nil {
@@ -171,10 +171,13 @@ func TestRemoveUserWithNoFilesNorDirectories(t *testing.T) {
 	rmUserRequest := pb.RemoveUserRequest{UserId: userId}
 	rmUserStatus, r := TestServer.RemoveUser(ctx, &rmUserRequest)
 
-	if r != nil {
-		t.Fatal(r)
+	if r == nil {
+		t.Fatalf("Removed user erroneously because they don't exist anymore")
 	}
-	if len(rmUserStatus.FileIdsToRemove) != 0 {
-		t.Fatalf("Remove User Status should not contain fileId of any file to be physically removed")
+	if rmUserStatus != nil {
+		if len(rmUserStatus.FileIdsToRemove) != 0 {
+			t.Fatalf("Remove User Status should not contain fileId of any file to be physically removed")
+		}
+		t.Fatalf("Remove User Status should be nil as error has happened ")
 	}
 }

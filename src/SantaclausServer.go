@@ -295,42 +295,6 @@ func (server *SantaclausServerImpl) AddDirectory(ctx context.Context, req *pb.Ad
 	return status, nil
 }
 
-func (server *SantaclausServerImpl) RemoveDirectory(ctx context.Context, req *pb.RemoveDirectoryRequest) (status *pb.RemoveDirectoryStatus, r error) {
-	log.Println("Request: RemoveDirectory") // todo replace with class request logger
-
-	//	find all subdirectories recursively
-	//	in each subdirectory, add fileIds to the status (fileIdsToRemove)
-	//	set directories as deleted
-	dirId, r := primitive.ObjectIDFromHex(req.DirId)
-
-	var tmpDir directory
-
-	if r != nil {
-		return nil, r
-	}
-	// Check if dir exists
-	filter := bson.D{bson.E{Key: "_id", Value: dirId}}
-	r = server.mongoColls[DirectoriesCollName].FindOne(ctx, filter).Decode(&tmpDir)
-	if r != nil {
-		return nil, r
-	}
-
-	status = &pb.RemoveDirectoryStatus{FileIdsToRemove: make([]string, 0)}
-	// Mark all subdirectories as deleted (Virtual)
-	r = server.removeSubDirectories(ctx, &dirId, status)
-	if r != nil {
-		return status, r
-	}
-	r = server.removeOneDirectory(ctx, &dirId, status)
-	// Remove all directories that have been marked as deleted in recursive sub functions (Physical)
-	filter = bson.D{bson.E{Key: "deleted", Value: true}}
-	_, r = server.mongoColls[DirectoriesCollName].DeleteMany(ctx, filter)
-	if r != nil {
-		return nil, r
-	}
-	return status, nil
-}
-
 /*
  * If dirId is nil, return root directory
  */
