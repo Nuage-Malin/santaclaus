@@ -213,7 +213,6 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 				DirId:  fileFound.DirId.Hex(),
 				UserId: fileFound.UserId.Hex()},
 			FileId:       fileFound.Id.Hex(),
-			DirId:        fileFound.DirId.Hex(),
 			State:        pb.FileState_UNKNOWN,
 			LastEditorId: primitive.NilObjectID.Hex(), // todo this field is useless
 			Creation:     timestamppb.New(fileFound.CreatedAt),
