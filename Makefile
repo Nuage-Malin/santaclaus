@@ -14,16 +14,17 @@ SRC		=	main.go \
 			SantaclausServerGetDirectory.go \
 			SantaclausServer.go \
 			SantaclausServerInit.go \
-			SantaclausServerRemoveDirectory.go \
 			SantaclausServerMoveDir.go \
 			SantaclausServerMoveFile.go \
+			SantaclausServerRemoveDirectory.go \
+			SantaclausServerRemoveUser.go \
 			SantaclausServerStructs.go \
 			SantaclausServerUtilsDisks.go \
-			UtilsDirGet.go \
-			UtilsDirCheckExistance.go \
 			UtilsDirCheckContent.go \
+			UtilsDirCheckExistance.go \
+			UtilsDirFindFromPath.go \
+			UtilsDirGet.go \
 			UtilsFileGet.go
-
 
 SRC		:= $(addprefix $(SRCDIR)/, $(SRC))
 
