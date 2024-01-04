@@ -46,7 +46,6 @@ func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.Remo
 		}
 		for _, fileId := range removeDirStatus.FileIdsToRemove {
 			filesToRemove.FileIds = append(filesToRemove.FileIds, fileId)
-			status.FileIdsToRemove = append(status.FileIdsToRemove, fileId)
 		}
 	}
 	//
