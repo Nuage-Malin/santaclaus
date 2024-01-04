@@ -38,7 +38,7 @@ func (server *SantaclausServerImpl) RemoveUser(ctx context.Context, req *pb.Remo
 	var filesToRemove pb.RemoveFilesRequest
 	// var removeDirStatus pb.RemoveDirectoryStatus
 	for _, dir := range dirs {
-		removeDirStatus, r := server.RemoveDirectory(ctx, &pb.RemoveDirectoryRequest{DirId: dir.Id.String() /* todo use other method to convert to string ? */})
+		removeDirStatus, r := server.RemoveDirectory(ctx, &pb.RemoveDirectoryRequest{DirId: dir.Id.Hex() /* todo use other method to convert to string ? */})
 		if r != nil {
 			log.Print(r)
 			// Will print when removing sub directory of an already deleted directory, not a big problem but have to have it in mind when reading logs
