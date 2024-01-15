@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -56,7 +55,7 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	// opts := options.Update().SetUpsert(true)
 
 	for _, newDisk := range disks {
-		filter = bson.D{bson.E{Key: "physical_id", Value: newDisk.Id}}
+		filter = bson.D{bson.E{Key: "id", Value: newDisk.Id}}
 		findRes := server.mongoColls[DisksCollName].FindOne(ctx, filter)
 		var foundDisk disk
 
@@ -68,8 +67,7 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 		}
 
 		update = bson.D{
-			bson.E{Key: "_id", Value: primitive.NewObjectID()},
-			bson.E{Key: "physical_id", Value: newDisk.Id},
+			bson.E{Key: "id", Value: newDisk.Id},
 			bson.E{Key: "total_size", Value: 1000000000},     // todo put real value
 			bson.E{Key: "available_size", Value: 1000000000}} // todo put real values
 
@@ -86,24 +84,24 @@ func (server *SantaclausServerImpl) updateDiskBase(ctx context.Context) (r error
 	return r
 }
 
-func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileSize uint64, userId string) (found primitive.ObjectID, r error) {
+func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileSize uint64, userId string) (found string, r error) {
 	// todo query hardware malin for updates
 	server.updateDiskBase(ctx) // ignore error : if bugle can't update, we use the existing disk DB
 
 	var disks []disk
-	diskFound := disk{Id: primitive.NilObjectID, AvailableSize: 0, TotalSize: 0}
+	diskFound := disk{Id: "", AvailableSize: 0, TotalSize: 0}
 	filter := bson.D{bson.E{Key: "available_size", Value: bson.D{bson.E{Key: "$gt", Value: fileSize}}}}
 	res, r := server.mongoColls[DisksCollName].Find(ctx, filter)
 
 	if r != nil {
-		return primitive.NilObjectID, r
+		return "", r
 	}
 	if res == nil {
-		return primitive.NilObjectID, errors.New("Could not find disk big enough for file")
+		return "", errors.New("Could not find disk big enough for file")
 	}
 	r = res.All(ctx, &disks)
 	if r != nil {
-		return primitive.NilObjectID, r
+		return "", r
 	}
 	// todo change this algorithm to something more accurate, with a real choice that's optimised
 	for _, disk := range disks {
@@ -112,8 +110,8 @@ func (server *SantaclausServerImpl) findAvailableDisk(ctx context.Context, fileS
 			found = disk.Id
 		}
 	}
-	if found == primitive.NilObjectID {
-		return primitive.NilObjectID, errors.New("Could not find disk big enough for file") // todo uncomment
+	if found == "" {
+		return "", errors.New("Could not find disk big enough for file") // todo uncomment
 	}
 	// todo update disk size here ? or in other function ?
 	return found, nil

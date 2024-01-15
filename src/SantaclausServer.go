@@ -38,7 +38,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 
 		status = &pb.AddFileStatus{
 			FileId: fileFound.Id.Hex(),
-			DiskId: fileFound.DiskId.Hex()}
+			DiskId: fileFound.DiskId}
 		return nil, errors.New("File name already exists in this directory, aborting file creation")
 	}
 
@@ -72,7 +72,7 @@ func (server *SantaclausServerImpl) AddFile(ctx context.Context, req *pb.AddFile
 
 	status = &pb.AddFileStatus{
 		FileId: newFileId.Hex(),
-		DiskId: newFile.DiskId.Hex()}
+		DiskId: newFile.DiskId}
 
 	return status, nil
 }
@@ -218,7 +218,7 @@ func (server *SantaclausServerImpl) GetFile(ctx context.Context, req *pb.GetFile
 			Creation:     timestamppb.New(fileFound.CreatedAt),
 			LastEdit:     timestamppb.New(fileFound.LastUpload),
 		},
-		DiskId: fileFound.DiskId.Hex()}
+		DiskId: fileFound.DiskId}
 	return status, nil
 }
 

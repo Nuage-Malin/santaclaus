@@ -27,7 +27,7 @@ type file struct {
 	DirId      primitive.ObjectID `bson:"dir_id" json:"dir_id"`
 	UserId     primitive.ObjectID `bson:"user_id" json:"user_id"`
 	Size       uint64             `bson:"size"`
-	DiskId     primitive.ObjectID `bson:"disk_id"`
+	DiskId     string             `bson:"disk_id"`
 	LastUpload time.Time          // Lorsqu'il est virtuel: undefined, lorsqu'il est sur le disque dur: date
 	CreatedAt  time.Time          `bson:"created_at"`
 	EditedAt   time.Time          `bson:"updated_at"`
@@ -46,8 +46,7 @@ type directory struct {
 }
 
 type disk struct {
-	Id            primitive.ObjectID `bson:"_id"`
-	physicalId    string             `bson:"physical_id"`
-	TotalSize     uint64             `bson:"total_size"`
-	AvailableSize uint64             `bson:"available_size"`
+	Id            string `bson:"id"`
+	TotalSize     uint64 `bson:"total_size"`
+	AvailableSize uint64 `bson:"available_size"`
 }
